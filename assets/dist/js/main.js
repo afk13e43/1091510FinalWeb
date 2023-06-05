@@ -148,7 +148,7 @@ window.onload = function () {
             drawLineCanvas(ctx, lineChartData);
 
             var tempurl;
-            for (j = 1; j <= 50; j++) {
+            for (j = 0; j <= 50; j++) {
                 tempurl = url + "/" + j
                 $.getJSON(tempurl)
                     .done(function (msg) {
@@ -976,13 +976,16 @@ window.onload = function () {
             $('#gameTable').on('click','button', function(){
                 console.log($(this).attr("id"));
                 $("#wish_list").append("<tr>"
-                + `<td  style="border:solid">${all[$(this).attr("id")]['id']}</td>`
-                + `<td width="10%" style=" border:solid">${all[$(this).attr("id")]['日期']}</td>`
-                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[$(this).attr("id")]['商品網址']}">${all[$(this).attr("id")]['品項']}</a>
-                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[$(this).attr("id")]['id']}>${'刪除'}</button></td>`
-                + `<td  width="100%" style="border:solid">${all[$(this).attr("id")]['售價']}</td>`
+                + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id")-1)]['id']}</td>`
+                + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[$(this).attr("id")]['日期']}</td>`
+                + `<td id=${$(this).attr("id")}  width="30%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id")-1)]['商品網址']}">${all[($(this).attr("id")-1)]['品項']}</a>
+                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[($(this).attr("id")-1)]['id']}>${'刪除'}</button></td>`
+                + `<td id=${$(this).attr("id")}  width="100%" style="border:solid">${all[($(this).attr("id")-1)]['售價']}</td>`
                 + "</tr>");
               });
+              $('#wish_list').on('click','button', function(){
+                console.log($(this).attr("id"));});
+                $("wish_list").remove(id=$(this).attr("id") );
         })
         .fail(function (msg) {
             console.log("Fail!");
