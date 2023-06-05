@@ -975,8 +975,7 @@ window.onload = function () {
 
             });
             $('#gameTable').on('click', 'button', function () {
-               if($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項'])==false
-               && $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價'])==false)
+               if($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項'])==false|| $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價'])==false)
               {
                 $("#wish_list").append("<tr>"
                     + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
