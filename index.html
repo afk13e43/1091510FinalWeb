@@ -130,8 +130,80 @@
         d="M2.146 2.146a.5.5 0 0 0 0 .708l11 11a.5.5 0 0 0 .708-.708l-11-11a.5.5 0 0 0-.708 0Z" />
     </symbol>
   </svg>
+  </div>
+  <!-- <a class="btn btn-warning rounded-pill px-3" href="https://www.youtube.com/@LeS_kIneN" target="_blank"
+      rel="noreferrer noopenner" type="button">關於我</a> -->
 
-  <nav id="nav" class="d-flex gap-2 justify-content-center py-5">
+  <div id="main">
+    <article id="home" class="panel">
+      <div class="b-example-divider"></div>
+      <div class="col-lg-12 col-xxl-6 my-4 mx-auto">
+        <h1 style="text-align: center;">PTT Gamesale版近期二手遊戲市場查詢</h1>
+        <input class="form-control" id="game_name" placeholder="請輸入遊戲名稱..." type="value">
+        <br>
+        <div style="text-align: center;">
+          <button class="btn btn-primary" id="game_name_button" type="button">查詢特定遊戲</button>
+          <button id="clear_search" class="btn btn-outline-primary rounded-circle p-2 lh-1" type="button">
+            <svg class="bi" width="16" height="16">
+              <use xlink:href="#x-lg" />
+            </svg>
+            <span class="visually-hidden">Dismiss</span>
+            清除查詢
+          </button>
+
+
+          <button type="button" class="btn btn-success rounded-pill px-3" data-bs-toggle="modal"
+            data-bs-target="#staticBackdrop">
+            關注清單
+          </button>
+          <!-- Modal -->
+          <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+              <div class=" modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">關注清單</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <table id="wish_list">
+                    </table>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <button class="btn btn-link rounded-pill px-3" id="haka_button" type="button">客家好手氣</button>
+        </div>
+        <div class="d-flex gap-2 justify-content-center py-5">
+          <span><input type="radio" name="game_type" value="1" id="alll" checked><b>全部平台</b></span>
+          <span><input type="radio" name="game_type" value="2" id="ps" unchecked><b>PS</b></span>
+          <span><input type="radio" name="game_type" value="3" id="xbox" unchecked><b>XBOX</b></span>
+          <span><input type="radio" name="game_type" value="4" id="ns" unchecked><b>NS</b></span>
+        </div>
+      </div>
+
+      <div class="b-example-divider"></div>
+
+      <div class="col-lg-18 col-xxl-8 my-5 mx-auto">
+        <canvas id="canvas1" width="560" height="200"></canvas>
+      </div>
+  </div>
+  <div class="b-example-divider"></div>
+  <div class="col-lg-18 col-xxl-10 my-5 mx-auto">
+    <div style="overflow-y: auto; height: 1000px;">
+      <table id="gameTable">
+      </table>
+    </div>
+  </div>
+  <div class="b-example-divider"></div>
+  <div style="text-align: left;" class="col-lg-18 col-xxl-10 my-5 mx-auto">
     <button type="button" class="btn btn-danger rounded-pill px-3" data-bs-toggle="modal"
       data-bs-target="#staticBackdrop1">
       檢視爬蟲程式
@@ -282,74 +354,8 @@ with open(jsonfile, 'w',encoding="utf8") as fp:
         </div>
       </div>
     </div>
-    </div>
-    <button type="button" class="btn btn-success rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-      關注清單
-    </button>
-    <!-- Modal -->
-    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-      aria-labelledby="staticBackdropLabel" aria-hidden="true">
-      <div class="modal-dialog modal-xl"">
-      <div class=" modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="staticBackdropLabel">關注清單</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <table id="wish_list">
-            </table>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
-    <!-- <a class="btn btn-warning rounded-pill px-3" href="https://www.youtube.com/@LeS_kIneN" target="_blank"
-      rel="noreferrer noopenner" type="button">關於我</a> -->
-  </nav>
-  <div id="main">
-    <article id="home" class="panel">
-      <div class="b-example-divider"></div>
-      <div class="col-lg-12 col-xxl-6 my-4 mx-auto">
-        <h1 style="text-align: center;">PTT Gamesale版近期二手遊戲市場查詢</h1>
-        <input class="form-control" id="game_name" placeholder="請輸入遊戲名稱..." type="value">
-        <br>
-        <div style="text-align: center;">
-          <button class="btn btn-primary" id="game_name_button" type="button">查詢特定遊戲</button>
-          <button id="clear_search" class="btn btn-outline-primary rounded-circle p-2 lh-1" type="button">
-            <svg class="bi" width="16" height="16">
-              <use xlink:href="#x-lg" />
-            </svg>
-            <span class="visually-hidden">Dismiss</span>
-            清除查詢
-          </button>
-          <button class="btn btn-link rounded-pill px-3" id="haka_button" type="button">客家好手氣</button>
-        </div>
-        <div class="d-flex gap-2 justify-content-center py-5">
-          <span><input type="radio" name="game_type" value="1" id="alll" checked><b>全部平台</b></span>
-          <span><input type="radio" name="game_type" value="2" id="ps" unchecked><b>PS</b></span>
-          <span><input type="radio" name="game_type" value="3" id="xbox" unchecked><b>XBOX</b></span>
-          <span><input type="radio" name="game_type" value="4" id="ns" unchecked><b>NS</b></span>
-        </div>
-      </div>
-
-      <div class="b-example-divider"></div>
-
-      <div class="col-lg-18 col-xxl-8 my-5 mx-auto">
-        <canvas id="canvas1" width="560" height="200"></canvas>
-      </div>
   </div>
-  <div class="b-example-divider"></div>
-  <div class="col-lg-18 col-xxl-10 my-5 mx-auto">
-    <div style="overflow-y: auto; height: 1000px;">
-      <table id="gameTable">
-      </table>
-    </div>
   </div>
-  <div class="b-example-divider"></div>
   <script src="./assets/dist/js/bootstrap.bundle.min.js"></script>
   </article>
   </div>
