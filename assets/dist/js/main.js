@@ -977,13 +977,32 @@ window.onload = function () {
             $('#gameTable').on('click', 'button', function () {
                if($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項'])==false|| $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價'])==false)
               {
+                if (all[($(this).attr("id") - 1)]['日期'] != "未知") 
+                {var date1 = new Date(all[($(this).attr("id") - 1)]['日期'] * 1000);
                 $("#wish_list").append("<tr>"
                     + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
-                    + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[$(this).attr("id")]['日期']}</td>`
+                    + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${date1.getFullYear() +
+                        "/" + (date1.getMonth() + 1) +
+                        "/" + (date1.getDate()) +
+                        " " + date1.getHours() +
+                        ":" + date1.getMinutes() +
+                        ":" + date1.getSeconds()}</td>`
                     + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
                 <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
                     + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
                     + "</tr>");
+                }
+                else
+                {
+                    $("#wish_list").append("<tr>"
+                    + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
+                    + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[($(this).attr("id") - 1)]['日期']}</td>`
+                    + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
+                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
+                    + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
+                    + "</tr>");
+
+                }
               }
               else
               {
