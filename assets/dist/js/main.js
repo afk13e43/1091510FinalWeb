@@ -164,7 +164,8 @@ window.onload = function () {
                                 " " + date.getHours() +
                                 ":" + date.getMinutes() +
                                 ":" + date.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${Game['商品網址']}">${Game['品項']}</a><button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" >${'新增'}</button></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${Game['商品網址']}">${Game['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  Game['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
                                 + "</tr>");
                         }
@@ -172,14 +173,17 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${Game['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${Game['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${Game['商品網址']}">${Game['品項']}</a><button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" >${'新增'}</button></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${Game['商品網址']}">${Game['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  Game['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
                                 + "</tr>");
                         }
+                        
                     })
                     .fail(function (msg) {
                         console.log("Fail!");
                     });
+
             }
             $("#gameTable").css("border", "solid");
             $("#haka_button").on("click", function () {
@@ -202,7 +206,8 @@ window.onload = function () {
                                 " " + date1.getHours() +
                                 ":" + date1.getMinutes() +
                                 ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -210,7 +215,8 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${all[t]['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -227,7 +233,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -235,7 +242,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -253,7 +261,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -261,7 +270,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -279,7 +289,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -287,7 +298,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -313,7 +325,8 @@ window.onload = function () {
                                 " " + date1.getHours() +
                                 ":" + date1.getMinutes() +
                                 ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -321,7 +334,8 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${all[t]['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -338,7 +352,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -346,7 +361,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -364,7 +380,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -372,7 +389,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -390,7 +408,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -398,7 +417,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -423,7 +443,8 @@ window.onload = function () {
                                 " " + date1.getHours() +
                                 ":" + date1.getMinutes() +
                                 ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -431,7 +452,8 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${all[t]['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -448,7 +470,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -456,7 +479,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -474,7 +498,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -482,7 +507,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -500,7 +526,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -508,7 +535,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -533,7 +561,8 @@ window.onload = function () {
                                 " " + date1.getHours() +
                                 ":" + date1.getMinutes() +
                                 ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -541,7 +570,8 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${all[t]['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -558,7 +588,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -566,7 +597,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -584,7 +616,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -592,7 +625,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -610,7 +644,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -618,7 +653,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -672,7 +708,8 @@ window.onload = function () {
                                 " " + date1.getHours() +
                                 ":" + date1.getMinutes() +
                                 ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -680,7 +717,8 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${all[t]['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                 + "</tr>");
                         }
@@ -697,7 +735,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -705,7 +744,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -723,7 +763,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -731,7 +772,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -749,7 +791,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -757,7 +800,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -819,7 +863,8 @@ window.onload = function () {
                                     " " + date1.getHours() +
                                     ":" + date1.getMinutes() +
                                     ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -827,7 +872,8 @@ window.onload = function () {
                                 $("#gameTable").append("<tr>"
                                     + `<td  style="border:solid">${all[t]['id']}</td>`
                                     + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                     + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                     + "</tr>");
                             }
@@ -846,7 +892,8 @@ window.onload = function () {
                                         " " + date1.getHours() +
                                         ":" + date1.getMinutes() +
                                         ":" + date1.getSeconds()}</td>`
-                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                         + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                         + "</tr>");
                                 }
@@ -854,7 +901,8 @@ window.onload = function () {
                                     $("#gameTable").append("<tr>"
                                         + `<td  style="border:solid">${all[t]['id']}</td>`
                                         + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                         + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                         + "</tr>");
                                 }
@@ -874,7 +922,8 @@ window.onload = function () {
                                         " " + date1.getHours() +
                                         ":" + date1.getMinutes() +
                                         ":" + date1.getSeconds()}</td>`
-                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                         + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                         + "</tr>");
                                 }
@@ -882,7 +931,8 @@ window.onload = function () {
                                     $("#gameTable").append("<tr>"
                                         + `<td  style="border:solid">${all[t]['id']}</td>`
                                         + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                         + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                         + "</tr>");
                                 }
@@ -902,7 +952,8 @@ window.onload = function () {
                                         " " + date1.getHours() +
                                         ":" + date1.getMinutes() +
                                         ":" + date1.getSeconds()}</td>`
-                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                         + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                         + "</tr>");
                                 }
@@ -910,15 +961,22 @@ window.onload = function () {
                                     $("#gameTable").append("<tr>"
                                         + `<td  style="border:solid">${all[t]['id']}</td>`
                                         + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a></td>`
+                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
+                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${  all[t]['id']}>${'新增'}</button></td>`
                                         + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
                                         + "</tr>");
                                 }
                             }
                         }
                     }
+
                 }
+
             });
+            $('#gameTable').on('click','button', function(){
+                console.log($(this).attr("id"));
+                
+              });
         })
         .fail(function (msg) {
             console.log("Fail!");
