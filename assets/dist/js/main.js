@@ -148,7 +148,7 @@ window.onload = function () {
             drawLineCanvas(ctx, lineChartData);
 
             var tempurl;
-            for (j = 1; j <= 20; j++) {
+            for (j = 1; j <= 50; j++) {
                 tempurl = url + "/" + j
                 $.getJSON(tempurl)
                     .done(function (msg) {
@@ -164,7 +164,7 @@ window.onload = function () {
                                 " " + date.getHours() +
                                 ":" + date.getMinutes() +
                                 ":" + date.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${Game['商品網址']}">${Game['品項']}</a></td>`
+                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${Game['商品網址']}">${Game['品項']}</a><button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" >${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
                                 + "</tr>");
                         }
@@ -172,7 +172,7 @@ window.onload = function () {
                             $("#gameTable").append("<tr>"
                                 + `<td  style="border:solid">${Game['id']}</td>`
                                 + `<td width="10%" style=" border:solid">${Game['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${Game['商品網址']}">${Game['品項']}</a></td>`
+                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${Game['商品網址']}">${Game['品項']}</a><button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" >${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
                                 + "</tr>");
                         }
@@ -633,7 +633,7 @@ window.onload = function () {
                     dataPS4[j] = 0;
                     dataXBOX[j] = 0;
                 }
-                
+                $("#game_name").val("");
                 for (var t = 0; t < all.length; t++) {
                     var date = new Date(all[t]['日期'] * 1000);
                     var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
