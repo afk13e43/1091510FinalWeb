@@ -1,6 +1,7 @@
 var all;
 let myMap = new Map();
 
+var temp2;
 var data3 = [];
 var dataPS4 = [];
 var dataNS = [];
@@ -974,7 +975,9 @@ window.onload = function () {
 
             });
             $('#gameTable').on('click', 'button', function () {
-                console.log($(this).attr("id"));
+               if($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項'])==false
+               && $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價'])==false)
+              {
                 $("#wish_list").append("<tr>"
                     + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
                     + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[$(this).attr("id")]['日期']}</td>`
@@ -982,6 +985,12 @@ window.onload = function () {
                 <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
                     + `<td id=${$(this).attr("id")}  width="100%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
                     + "</tr>");
+              }
+              else
+              {
+                alert("已經加入清單！");
+              }
+
             });
             $('#wish_list').on('click', 'button', function () {
                 console.log($(this).attr("id"));
