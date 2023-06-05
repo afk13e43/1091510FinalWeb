@@ -981,9 +981,9 @@ window.onload = function () {
                 $("#wish_list").append("<tr>"
                     + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
                     + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[$(this).attr("id")]['日期']}</td>`
-                    + `<td id=${$(this).attr("id")}  width="30%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
+                    + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
                 <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
-                    + `<td id=${$(this).attr("id")}  width="100%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
+                    + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
                     + "</tr>");
               }
               else
