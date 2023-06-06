@@ -975,45 +975,78 @@ window.onload = function () {
 
             });
             $('#gameTable').on('click', 'button', function () {
-               if($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項'])==false|| $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價'])==false)
-              {
-                if (all[($(this).attr("id") - 1)]['日期'] != "未知") 
-                {var date1 = new Date(all[($(this).attr("id") - 1)]['日期'] * 1000);
-                $("#wish_list").append("<tr>"
-                    + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
-                    + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${date1.getFullYear() +
-                        "/" + (date1.getMonth() + 1) +
-                        "/" + (date1.getDate()) +
-                        " " + date1.getHours() +
-                        ":" + date1.getMinutes() +
-                        ":" + date1.getSeconds()}</td>`
-                    + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
+                let url2 = "https://1091510-json-server-1.azurewebsites.net/wishlist";
+                $.post(url2,
+                    {
+                        "日期": all[($(this).attr("id") - 1)]['日期'],
+                        "品項": all[($(this).attr("id") - 1)]['品項'],
+                        "售價": all[($(this).attr("id") - 1)]['售價'],
+                        "商品網址": all[($(this).attr("id") - 1)]['商品網址'],
+                        "id": all[($(this).attr("id") - 1)]['id']
+
+                    })
+                    .done(function (msg) {
+                        console.log(msg);
+                    })
+                    .fail(function (msg) {
+                        console.log("Fail!");
+                    });
+
+
+                if ($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項']) == false || $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價']) == false) {
+                    if (all[($(this).attr("id") - 1)]['日期'] != "未知") {
+                        var date1 = new Date(all[($(this).attr("id") - 1)]['日期'] * 1000);
+                        $("#wish_list").append("<tr>"
+                            + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
+                            + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${date1.getFullYear() +
+                            "/" + (date1.getMonth() + 1) +
+                            "/" + (date1.getDate()) +
+                            " " + date1.getHours() +
+                            ":" + date1.getMinutes() +
+                            ":" + date1.getSeconds()}</td>`
+                            + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
                 <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
-                    + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
-                    + "</tr>");
-                }
-                else
-                {
-                    $("#wish_list").append("<tr>"
-                    + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
-                    + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[($(this).attr("id") - 1)]['日期']}</td>`
-                    + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
+                            + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
+                            + "</tr>");
+                    }
+                    else {
+                        $("#wish_list").append("<tr>"
+                            + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
+                            + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[($(this).attr("id") - 1)]['日期']}</td>`
+                            + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
                 <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
-                    + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
-                    + "</tr>");
+                            + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
+                            + "</tr>");
+
+                    }
+
 
                 }
-              }
-              else
-              {
-                alert("已經加入清單！");
-              }
+                else {
+                    alert("已經加入清單！");
+                }
 
             });
             $('#wish_list').on('click', 'button', function () {
                 console.log($(this).attr("id"));
                 $(this).closest('tr').remove();
+                let url3 = "http://1091510-json-server-1.azurewebsites.net/wishlist/";
+                url3 = url3 + $(this).attr("id");
+
+                // 新增CORS相關設定
+                $.ajax({
+                    url: url3,
+                    type: 'DELETE',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Access-Control-Allow-Origin', '*'); // 設定允許的來源，此處為允許所有來源，您可以更換為特定的來源
+                        xhr.setRequestHeader('Access-Control-Allow-Methods', 'DELETE'); // 設定允許的HTTP方法，此處為只允許DELETE方法
+                    },
+                    success: function (data) {
+                        console.log(data);
+                    }
+                });
             });
+
         })
         .fail(function (msg) {
             console.log("Fail!");
