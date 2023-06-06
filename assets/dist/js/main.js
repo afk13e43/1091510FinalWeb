@@ -1037,10 +1037,6 @@ window.onload = function () {
                 $.ajax({
                     url: url3,
                     type: 'DELETE',
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Access-Control-Allow-Origin', '*'); // 設定允許的來源，此處為允許所有來源，您可以更換為特定的來源
-                        xhr.setRequestHeader('Access-Control-Allow-Methods', 'DELETE'); // 設定允許的HTTP方法，此處為只允許DELETE方法
-                    },
                     success: function (data) {
                         console.log(data);
                     }
