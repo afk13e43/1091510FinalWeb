@@ -105,7 +105,7 @@ window.onload = function () {
                         ":" + date.getMinutes() +
                         ":" + date.getSeconds()}</td>`
                         + `<td width="40%" style=" border:solid"><a  target="_blank" href="${wish[e]['商品網址']}">${wish[e]['品項']}</a>
-                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'新增'}</button></td>`
+                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'刪除'}</button></td>`
                         + `<td  width="100%" style="border:solid">${wish[e]['售價']}</td>`
                         + "</tr>");
                 }
@@ -114,7 +114,7 @@ window.onload = function () {
                         + `<td  style="border:solid">${wish[e]['id']}</td>`
                         + `<td width="10%" style=" border:solid">${wish[e]['日期']}</td>`
                         + `<td width="30%" style=" border:solid"><a target="_blank" href="${wish[e]['商品網址']}">${wish[e]['品項']}</a>
-                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'新增'}</button></td>`
+                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'刪除'}</button></td>`
                         + `<td  width="100%" style="border:solid">${wish[e]['售價']}</td>`
                         + "</tr>");
                 }
