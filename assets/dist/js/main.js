@@ -205,6 +205,7 @@ window.onload = function () {
                                 <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${Game['id']}>${'新增'}</button></td>`
                                 + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
                                 + "</tr>");
+                                
                         }
                         else {
                             $("#gameTable").append("<tr>"
@@ -1023,7 +1024,7 @@ window.onload = function () {
                     })
                     .done(function (msg) {
                         console.log(msg);
-                    })
+                    })  
                     .fail(function (msg) {
                         console.log("Fail!");
                     });
