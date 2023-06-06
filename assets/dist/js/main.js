@@ -1,6 +1,6 @@
 var all;
 let myMap = new Map();
-
+var wish;
 var temp2;
 var data3 = [];
 var dataPS4 = [];
@@ -78,7 +78,7 @@ function addData(chart, label, data) {
 }
 window.onload = function () {
     var Game;
-    let url = "https://1091510-json-server-1.azurewebsites.net/game_list"
+    let url = "https://1091510-json-server-1.azurewebsites.net/game_list";
     // $.getJSON(url)
     // .done(function(msg){
     //     Game=msg;
@@ -87,7 +87,42 @@ window.onload = function () {
     // .fail(function(msg){
     //     console.log("Fail!");
     // });
-
+    let url5 = "https://1091510-json-server-1.azurewebsites.net/wishlist";
+    $.getJSON(url5)
+        .done(function (msg) {
+            wish = msg;
+            for(var e =0;e<wish.length;e++)
+            {
+                if (wish[e]['日期'] != "未知") {
+                    var date = new Date(wish[e]['日期'] * 1000);
+                    $("#wish_list").append("<tr>"
+                        + `<td  style="border:solid">${wish[e]['id']}</td>`
+                        + `<td width="20%" style=" border:solid">${date.getFullYear() +
+                        "/" + (date.getMonth() + 1) +
+                        "/" + (date.getDate()) +
+                        " " + date.getHours() +
+                        ":" + date.getMinutes() +
+                        ":" + date.getSeconds()}</td>`
+                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${wish[e]['商品網址']}">${wish[e]['品項']}</a>
+                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'新增'}</button></td>`
+                        + `<td  width="100%" style="border:solid">${wish[e]['售價']}</td>`
+                        + "</tr>");
+                }
+                else {
+                    $("#wish_list").append("<tr>"
+                        + `<td  style="border:solid">${wish[e]['id']}</td>`
+                        + `<td width="10%" style=" border:solid">${wish[e]['日期']}</td>`
+                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${wish[e]['商品網址']}">${wish[e]['品項']}</a>
+                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'新增'}</button></td>`
+                        + `<td  width="100%" style="border:solid">${wish[e]['售價']}</td>`
+                        + "</tr>");
+                }
+            }
+            console.log(msg);
+        })
+        .fail(function (msg) {
+            console.log("Fail!");
+        });
     var set1 = new Set();
     $.getJSON(url)
         .done(function (msg) {
