@@ -122,7 +122,6 @@ window.onload = function () {
         
         })
         .fail(function (msg) {
-            alert("Fail");
             console.log("Fail!");
         });
     var set1 = new Set();
