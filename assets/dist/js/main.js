@@ -91,6 +91,7 @@ window.onload = function () {
     $.getJSON(url5)
         .done(function (msg) {
             wish = msg;
+            alert(wish);
             for(var e =0;e<wish.length;e++)
             {
                 if (wish[e]['日期'] != "未知") {
