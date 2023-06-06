@@ -1032,7 +1032,6 @@ window.onload = function () {
                 $(this).closest('tr').remove();
                 let url3 = "http://1091510-json-server-1.azurewebsites.net/wishlist/";
                 url3 = url3 + $(this).attr("id");
-
                 // 新增CORS相關設定
                 $.ajax({
                     url: url3,
