@@ -119,6 +119,7 @@ window.onload = function () {
                 }
             }
             console.log(msg);
+        
         })
         .fail(function (msg) {
             alert("Fail");
