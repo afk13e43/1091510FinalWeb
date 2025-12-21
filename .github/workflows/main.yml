@@ -3,18 +3,26 @@ name: Run PTT Scraper
 # 1. 設定觸發時間
 on:
   schedule:
-    # 這裡使用 Cron 表達式，設定為每天凌晨 0 點 (UTC+0)，約台灣時間早上 8 點
+    # 台灣時間每天早上 8 點執行 (UTC 00:00)
     - cron: '0 0 * * *'
-  workflow_dispatch: # 讓你可以手動點擊按鈕來執行，方便測試
+  workflow_dispatch: # 保留手動執行按鈕
 
 jobs:
   build:
-    runs-on: ubuntu-latest # 使用最新的 Linux 環境
+    runs-on: ubuntu-latest
+
+    # 給予寫入權限，這對 git push 至關重要
+    permissions:
+      contents: write
 
     steps:
-    # 2. 檢出程式碼 (把你的專案下載到這台雲端電腦)
+    # 2. 檢出程式碼
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        # 確保抓取最新狀態，避免追加時版本衝突
+        persist-credentials: true
+        fetch-depth: 0
 
     # 3. 安裝 Python 環境
     - name: Set up Python
@@ -34,8 +42,18 @@ jobs:
     # 6. 將更新後的 ptt_game.json 存回 GitHub
     - name: Commit and push changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        # 設定機器人身份
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # 再次拉取最新變動，防止在爬蟲執行期間有人修改了檔案
+        git pull origin master
+        
+        # 加入更新後的資料檔
         git add ptt_game.json
-        git commit -m "Auto update PTT data: $(date)" || echo "No changes to commit"
-        git push
+        
+        # 提交變更，如果沒有新資料則不報錯 (使用 || echo)
+        git commit -m "Auto update PTT data: $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
+        
+        # 推回儲存庫
+        git push origin master
