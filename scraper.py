@@ -157,7 +157,11 @@ for item in all_data_list:
 # 4. 重新編排 ID (從 1 開始)
 for i, item in enumerate(unique_list):
     item['id'] = i + 1
-
+if len(unique_list) > 1000:
+    unique_list = unique_list[-1000:]
+    # 切完後建議再次重新編排 ID，確保網頁顯示的編號是從 1 到 1000
+    for i, item in enumerate(unique_list):
+        item['id'] = i + 1
 # 5. 寫入 JSON
 dict_to_save = {"game_list": unique_list}
 with open(jsonfile, 'w', encoding="utf8") as fp:
@@ -165,3 +169,4 @@ with open(jsonfile, 'w', encoding="utf8") as fp:
 
 print(f"--- 任務完成 ---")
 print(f"目前資料庫總計: {len(unique_list)} 筆資料")
+
