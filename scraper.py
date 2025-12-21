@@ -38,7 +38,7 @@ try:
             data_page_list.append(ele)
 
     # 往回抓取 10 頁
-    for i in range(0, 10):
+    for i in range(0, 20):
         response = requests.get(prev_page, headers=my_headers, timeout=10)
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         header = soup.find_all(attrs={"class": "title"})
@@ -123,7 +123,7 @@ for index, ele in enumerate(data_page_list):
         arrayofdict.append(finaldict)
         print(f"[{len(arrayofdict)}] 成功抓取: {sale_title[:20]}...")
         
-        time.sleep(1.5) # 每篇文章間隔
+        time.sleep(2) # 每篇文章間隔
 
     except Exception as e:
         print(f"解析文章 {index} 出錯: {e}")
@@ -169,4 +169,5 @@ with open(jsonfile, 'w', encoding="utf8") as fp:
 
 print(f"--- 任務完成 ---")
 print(f"目前資料庫總計: {len(unique_list)} 筆資料")
+
 
