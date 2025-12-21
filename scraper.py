@@ -12,7 +12,10 @@ import time
 import string
 import datetime
 URL = "https://www.ptt.cc/bbs/Gamesale/index.html"
-my_headers = {'cookie': 'over18=1;'}
+my_headers = {
+    'cookie': 'over18=1;',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+}
 response = requests.get(URL, headers = my_headers)
 soup = bs4.BeautifulSoup(response.text,"html.parser")
 header = soup.find_all(attrs={"class": "title"})
@@ -28,7 +31,7 @@ for ele in header:
         if "售" in temp:
             if not '徵' in temp:
                 data_page_list.append(ele)
-for i in range(0,100):
+for i in range(0,10):
     #print(prev_page)
     response = requests.get(prev_page, headers = my_headers)
     soup = bs4.BeautifulSoup(response.text,"html.parser")
@@ -46,7 +49,7 @@ for i in range(0,100):
     time2 = soup.find(attrs={"class": "date"})
     prev_page= "https://www.ptt.cc"+yeet[3]
     print(prev_page)
-    time.sleep(1)
+    time.sleep(2)
 #print(header)
 #print(time2)
 arrayofdict=[]
@@ -120,9 +123,10 @@ for ele in data_page_list:
     finaldict['id']=int(temp)
     count = count+1
     arrayofdict.append(finaldict)
-    time.sleep(1)
+    time.sleep(2)
 print(arrayofdict)
 dict1["game_list"]=arrayofdict
 jsonfile = "ptt_game.json"
 with open(jsonfile, 'w',encoding="utf8") as fp:
+
     json.dump(dict1, fp,ensure_ascii=False)
