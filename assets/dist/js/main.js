@@ -78,19 +78,9 @@ function addData(chart, label, data) {
 }
 window.onload = function () {
     var Game;
-    let url = "https://1091510-json-server-1.azurewebsites.net/game_list";
-    // $.getJSON(url)
-    // .done(function(msg){
-    //     Game=msg;
-    //     console.log(Game)
-    // })
-    // .fail(function(msg){
-    //     console.log("Fail!");
-    // });
-    let url5 = "https://1091510-json-server-1.azurewebsites.net/wishlist";
-    $.getJSON(url5)
-        .done(function (msg) {
-            wish = msg;
+    let url = "./ptt_game.json";
+    var storedWish = localStorage.getItem("wishlist");
+    wish = storedWish ? JSON.parse(storedWish) : [];
             for(var e =0;e<wish.length;e++)
             {
                 if (wish[e]['日期'] != "未知") {
@@ -118,16 +108,10 @@ window.onload = function () {
                         + "</tr>");
                 }
             }
-            console.log(msg);
-        
-        })
-        .fail(function (msg) {
-            console.log("Fail!");
-        });
     var set1 = new Set();
     $.getJSON(url)
         .done(function (msg) {
-            all = msg;
+            all = msg.game_list;
             for (var t = 0; t < all.length; t++) {
                 var date = new Date(all[t]['日期'] * 1000);
                 var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
@@ -184,12 +168,8 @@ window.onload = function () {
             var ctx = $('#canvas1')[0];
             drawLineCanvas(ctx, lineChartData);
 
-            var tempurl;
-            for (j = 0; j <= 50; j++) {
-                tempurl = url + "/" + j
-                $.getJSON(tempurl)
-                    .done(function (msg) {
-                        Game = msg;
+            for (j = 0; j < all.length && j <= 50; j++) {
+                        Game = all[j];
                         console.log(Game);
                         if (Game['日期'] != "未知") {
                             var date = new Date(Game['日期'] * 1000);
@@ -216,12 +196,6 @@ window.onload = function () {
                                 + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
                                 + "</tr>");
                         }
-
-                    })
-                    .fail(function (msg) {
-                        console.log("Fail!");
-                    });
-
             }
             $("#gameTable").css("border", "solid");
             $("#haka_button").on("click", function () {
@@ -1012,25 +986,17 @@ window.onload = function () {
 
             });
             $('#gameTable').on('click', 'button', function () {
-                let url2 = "https://1091510-json-server-1.azurewebsites.net/wishlist";
-                $.post(url2,
-                    {
+                if ($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項']) == false || $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價']) == false) {
+                    var newItem = {
                         "日期": all[($(this).attr("id") - 1)]['日期'],
                         "品項": all[($(this).attr("id") - 1)]['品項'],
                         "售價": all[($(this).attr("id") - 1)]['售價'],
                         "商品網址": all[($(this).attr("id") - 1)]['商品網址'],
                         "id": all[($(this).attr("id") - 1)]['id']
+                    };
+                    wish.push(newItem);
+                    localStorage.setItem("wishlist", JSON.stringify(wish));
 
-                    })
-                    .done(function (msg) {
-                        console.log(msg);
-                    })  
-                    .fail(function (msg) {
-                        console.log("Fail!");
-                    });
-
-
-                if ($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項']) == false || $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價']) == false) {
                     if (all[($(this).attr("id") - 1)]['日期'] != "未知") {
                         var date1 = new Date(all[($(this).attr("id") - 1)]['日期'] * 1000);
                         $("#wish_list").append("<tr>"
@@ -1067,16 +1033,11 @@ window.onload = function () {
             $('#wish_list').on('click', 'button', function () {
                 console.log($(this).attr("id"));
                 $(this).closest('tr').remove();
-                let url3 = "https://1091510-json-server-1.azurewebsites.net/wishlist/";
-                url3 = url3 + $(this).attr("id");
-                // 新增CORS相關設定
-                $.ajax({
-                    url: url3,
-                    type: 'DELETE',
-                    success: function (data) {
-                        console.log(data);
-                    }
+                var idToRemove = $(this).attr("id");
+                wish = wish.filter(function(item) {
+                    return item.id != idToRemove;
                 });
+                localStorage.setItem("wishlist", JSON.stringify(wish));
             });
 
 
