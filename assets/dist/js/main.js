@@ -171,8 +171,8 @@ window.onload = function () {
             dataPS4 = dataPS4.reverse();
             var ctx = $('#canvas1')[0];
             drawLineCanvas(ctx, lineChartData);
-
-            for (j = 0; j < all.length; j++) {
+            $("#gameTable").empty();
+            for (j = 0; j < all.length; j++){
                         Game = all[j];
                         console.log(Game);
                         if (Game['日期'] != "未知") {
