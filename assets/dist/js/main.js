@@ -47,18 +47,22 @@ function drawLineCanvas(ctx, data) {
     if (window.myLine instanceof Chart) {
         window.myLine.destroy();
     }
-    window.myLine = new Chart(ctx, {  //先建立一個 chart
-        type: 'line', // 型態
+    window.myLine = new Chart(ctx, {
+        type: 'line',
         data: data,
         options: {
             responsive: true,
-            legend: { //是否要顯示圖示
+            // --- 在這裡新增這兩行 ---
+            maintainAspectRatio: true, // 告訴圖表：「請維持我設定的長寬比例」
+            aspectRatio: 2.5,          // 數值越大，圖表會越扁（例如 2.5 代表寬度是高度的 2.5 倍）
+            // -----------------------
+            legend: {
                 display: true,
             },
-            tooltips: { //是否要顯示 tooltip
+            tooltips: {
                 enabled: true
             },
-            scales: {  //是否要顯示 x、y 軸
+            scales: {
                 xAxes: [{
                     display: true
                 }],
