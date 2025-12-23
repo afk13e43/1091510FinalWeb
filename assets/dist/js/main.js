@@ -172,7 +172,7 @@ window.onload = function () {
             var ctx = $('#canvas1')[0];
             drawLineCanvas(ctx, lineChartData);
 
-            for (j = 0; j < all.length && j <= 50; j++) {
+            for (j = 0; j < all.length; j++) {
                         Game = all[j];
                         console.log(Game);
                         if (Game['日期'] != "未知") {
