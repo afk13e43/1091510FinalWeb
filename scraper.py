@@ -173,7 +173,6 @@ if len(arrayofdict) > 0:
         if item['商品網址'] not in seen_urls:
             unique_list.append(item)
             seen_urls.add(item['商品網址'])
-
     # 4. 重新編排 ID 並限制數量
     for i, item in enumerate(unique_list):
         item['id'] = i + 1
@@ -191,3 +190,4 @@ if len(arrayofdict) > 0:
     print(f"--- 任務完成 --- 目前總計: {len(unique_list)} 筆資料")
 else:
     print("--- 任務終止 --- 本次未抓取到任何新資料，保留原檔案。")
+
