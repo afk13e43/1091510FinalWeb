@@ -20,6 +20,23 @@ jsonfile = "ptt_game.json"
 
 # --- 第一階段：抓取列表頁連結 ---
 print("正在讀取列表頁...")
+max_retries = 3
+success = False
+
+for attempt in range(max_retries):
+    try:
+        response = requests.get(URL, headers=my_headers, timeout=15)
+        if response.status_code == 200:
+            success = True
+            break
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        print(f"第 {attempt + 1} 次連線失敗: {e}，5秒後重試...")
+        time.sleep(5)
+
+if not success:
+    print("多次重試失敗，PTT 目前可能完全封鎖此 IP。")
+    data_page_list = []
+else:
 try:
     response = requests.get(URL, headers=my_headers, timeout=10)
     soup = bs4.BeautifulSoup(response.text, "html.parser")
@@ -169,5 +186,3 @@ with open(jsonfile, 'w', encoding="utf8") as fp:
 
 print(f"--- 任務完成 ---")
 print(f"目前資料庫總計: {len(unique_list)} 筆資料")
-
-
