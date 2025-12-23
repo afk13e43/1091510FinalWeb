@@ -37,42 +37,73 @@ if not success:
     print("多次重試失敗，PTT 目前可能完全封鎖此 IP。")
     data_page_list = []
 else:
-try:
-    response = requests.get(URL, headers=my_headers, timeout=10)
-    soup = bs4.BeautifulSoup(response.text, "html.parser")
-    header = soup.find_all(attrs={"class": "title"})
-    newest = soup.find_all(attrs={"class": "btn wide"})
-    
-    # 取得上一頁連結
-    temp = newest[1]
-    yeet = str(temp).split('"')
-    prev_page = "https://www.ptt.cc" + yeet[3]
-
-    data_page_list = []
-    for ele in header:
-        temp_str = str(ele)
-        if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
-            data_page_list.append(ele)
-
-    # 往回抓取 10 頁
-    for i in range(0, 20):
-        response = requests.get(prev_page, headers=my_headers, timeout=10)
+    try:
+        response = requests.get(URL, headers=my_headers, timeout=10)
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         header = soup.find_all(attrs={"class": "title"})
-        for ele in header:
-            temp_str = str(ele)
-            if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
-                data_page_list.append(ele)
-        
         newest = soup.find_all(attrs={"class": "btn wide"})
-        yeet = str(newest[1]).split('"')
-        prev_page = "https://www.ptt.cc" + yeet[3]
-        print(f"已讀取分頁: {prev_page}")
-        time.sleep(1.5) # 稍微加快一點，但仍保持間隔
+        
+        # 取得上一頁連結（更穩定地使用 href 屬性）
+        if len(newest) > 1:
+            prev_href = None
+            # newest[1] 通常是 <a class="btn wide" href="...">上頁</a>
+            if newest[1].has_attr('href'):
+                prev_href = newest[1]['href']
+            else:
+                a = newest[1].find('a')
+                if a and a.has_attr('href'):
+                    prev_href = a['href']
+            if prev_href:
+                prev_page = "https://www.ptt.cc" + prev_href
+            else:
+                prev_page = None
+        else:
+            prev_page = None
 
-except Exception as e:
-    print(f"抓取列表時發生錯誤: {e}")
-    data_page_list = []
+        data_page_list = []
+        # 以 <a> tag 為主，避免被刪文或沒有連結時造成錯誤
+        for ele in header:
+            a_tag = ele.find('a')
+            if not a_tag:
+                continue
+            title_text = a_tag.text or ""
+            if "[公告]" not in title_text and "售" in title_text and "徵" not in title_text:
+                data_page_list.append(a_tag)
+
+        # 往回抓取 20 頁（原先註解為 10，程式碼是 20）
+        for i in range(0, 20):
+            if not prev_page:
+                break
+            response = requests.get(prev_page, headers=my_headers, timeout=10)
+            soup = bs4.BeautifulSoup(response.text, "html.parser")
+            header = soup.find_all(attrs={"class": "title"})
+            for ele in header:
+                a_tag = ele.find('a')
+                if not a_tag:
+                    continue
+                title_text = a_tag.text or ""
+                if "[公告]" not in title_text and "售" in title_text and "徵" not in title_text:
+                    data_page_list.append(a_tag)
+            
+            newest = soup.find_all(attrs={"class": "btn wide"})
+            if len(newest) > 1:
+                if newest[1].has_attr('href'):
+                    prev_page = "https://www.ptt.cc" + newest[1]['href']
+                else:
+                    a = newest[1].find('a')
+                    if a and a.has_attr('href'):
+                        prev_page = "https://www.ptt.cc" + a['href']
+                    else:
+                        prev_page = None
+            else:
+                prev_page = None
+
+            print(f"已讀取分頁: {prev_page}")
+            time.sleep(1.5) # 稍微加快一點，但仍保持間隔
+
+    except Exception as e:
+        print(f"抓取列表時發生錯誤: {e}")
+        data_page_list = []
 
 # --- 第二階段：解析文章內容 ---
 arrayofdict = []
@@ -81,12 +112,18 @@ print(f"開始解析文章內容，共計 {len(data_page_list)} 篇...")
 for index, ele in enumerate(data_page_list):
     try:
         finaldict = {}
-        page_str = str(ele)
-        page_split = page_str.split('"')
-        if len(page_split) < 4:
+
+        # ele 現在預期為 <a> Tag（在第一階段已做過檢查）
+        a_tag = None
+        if isinstance(ele, bs4.element.Tag) and ele.name == 'a':
+            a_tag = ele
+        else:
+            a_tag = ele.find('a') if hasattr(ele, 'find') else None
+        if not a_tag or not a_tag.has_attr('href'):
+            # 如果沒有 href 就跳過
             continue
-            
-        data_page = "https://www.ptt.cc" + page_split[3]
+
+        data_page = "https://www.ptt.cc" + a_tag['href']
         
         # 進入文章頁面
         response = requests.get(data_page, headers=my_headers, timeout=10)
@@ -114,9 +151,9 @@ for index, ele in enumerate(data_page_list):
         texts = pre_text.split('\n')
         contents = texts[2:]
         
-        # 標題處理
-        sale_title = page_split[4].strip('>').split("</a")[0]
-        
+        # 標題處理：直接使用 a_tag 的文字，比用 split 更穩定
+        sale_title = a_tag.text.strip()
+
         # 售價解析邏輯
         money = ""
         open_price_flag = 0
@@ -167,16 +204,19 @@ all_data_list.extend(arrayofdict)
 unique_list = []
 seen_urls = set()
 for item in all_data_list:
-    if item['商品網址'] not in seen_urls:
+    url = item.get('商品網址')
+    if not url:
+        continue
+    if url not in seen_urls:
         unique_list.append(item)
-        seen_urls.add(item['商品網址'])
+        seen_urls.add(url)
 
 # 4. 重新編排 ID (從 1 開始)
 for i, item in enumerate(unique_list):
     item['id'] = i + 1
 if len(unique_list) > 1000:
     unique_list = unique_list[-1000:]
-    # 切完後建議再次重新編排 ID，確保網頁顯示的編號是從 1 到 1000
+    # 切完後再次重新編排 ID，確保網頁顯示的編號是從 1 到 1000
     for i, item in enumerate(unique_list):
         item['id'] = i + 1
 # 5. 寫入 JSON
