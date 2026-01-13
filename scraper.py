@@ -46,32 +46,36 @@ else:
         newest = soup.find_all(attrs={"class": "btn wide"})
 
         # 取得上一頁連結
-        temp = newest[1]
-        yeet = str(temp).split('"')
-        prev_page = "https://www.ptt.cc" + yeet[3]
+        if len(newest) > 1:
+            temp = newest[1]
+            yeet = str(temp).split('"')
+            prev_page = "https://www.ptt.cc" + yeet[3]
 
-        # 處理首頁標題
-        for ele in header:
-            temp_str = str(ele)
-            if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
-                data_page_list.append(ele)
-
-        # 往回抓取分頁 (你設定為 20 頁)
-        print(f"開始回溯抓取分頁...")
-        for i in range(0, 20):
-            res_p = requests.get(prev_page, headers=my_headers, timeout=10)
-            soup_p = bs4.BeautifulSoup(res_p.text, "html.parser")
-            header_p = soup_p.find_all(attrs={"class": "title"})
-            for ele in header_p:
+            # 處理首頁標題
+            for ele in header:
                 temp_str = str(ele)
                 if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
                     data_page_list.append(ele)
 
-            newest_p = soup_p.find_all(attrs={"class": "btn wide"})
-            yeet_p = str(newest_p[1]).split('"')
-            prev_page = "https://www.ptt.cc" + yeet_p[3]
-            print(f"已讀取第 {i+1} 個分頁: {prev_page}")
-            time.sleep(1.5) 
+            # 往回抓取分頁 (你設定為 20 頁)
+            print(f"開始回溯抓取分頁...")
+            for i in range(0, 20):
+                res_p = requests.get(prev_page, headers=my_headers, timeout=10)
+                soup_p = bs4.BeautifulSoup(res_p.text, "html.parser")
+                header_p = soup_p.find_all(attrs={"class": "title"})
+                for ele in header_p:
+                    temp_str = str(ele)
+                    if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
+                        data_page_list.append(ele)
+
+                newest_p = soup_p.find_all(attrs={"class": "btn wide"})
+                if len(newest_p) > 1:
+                    yeet_p = str(newest_p[1]).split('"')
+                    prev_page = "https://www.ptt.cc" + yeet_p[3]
+                    print(f"已讀取第 {i+1} 個分頁: {prev_page}")
+                time.sleep(1.5) 
+        else:
+            print("找不到上一頁按鈕，可能結構改變")
 
     except Exception as e:
         print(f"抓取列表時發生錯誤: {e}")
@@ -191,6 +195,3 @@ if len(arrayofdict) > 0:
     print(f"--- 任務完成 --- 目前總計: {len(unique_list)} 筆資料")
 else:
     print("--- 任務終止 --- 本次未抓取到任何新資料，保留原檔案。")
-
-
-
