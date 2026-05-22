@@ -177,15 +177,17 @@ if len(arrayofdict) > 0:
         if item['商品網址'] not in seen_urls:
             unique_list.append(item)
             seen_urls.add(item['商品網址'])
+    # 排序：新的在前（reverse=True）。日期非數值時視為 0，會被擠到尾巴後在截斷時砍掉。
     unique_list.sort(key=lambda x: x['日期'] if isinstance(x['日期'], (int, float)) else 0, reverse=True)
-    # 4. 重新編排 ID 並限制數量
+
+    # 限制數量：保留「最新的 1000 筆」。
+    # 注意：因為已 reverse=True，最新的在 index 0；要切前 1000 筆而不是後 1000 筆。
+    if len(unique_list) > 1000:
+        unique_list = unique_list[:1000]
+
+    # 重新編排 ID（從 1 開始）
     for i, item in enumerate(unique_list):
         item['id'] = i + 1
-    
-    if len(unique_list) > 1000:
-        unique_list = unique_list[-1000:]
-        for i, item in enumerate(unique_list):
-            item['id'] = i + 1
 
     # 5. 寫入 JSON
     dict_to_save = {"game_list": unique_list}
