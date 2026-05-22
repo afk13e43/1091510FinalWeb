@@ -50,16 +50,12 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
 
-        # 用 fetch+rebase 取代 pull，避免分歧時產生 merge commit
-        git fetch origin master
-        git rebase origin/master || git rebase --abort
+        # 再次拉取最新變動，防止在爬蟲執行期間有人修改了檔案
+        git pull origin master
 
         git add ptt_game.json
 
-        # 明確判斷是否有變更，比 `commit || echo` 更可靠
-        if git diff --staged --quiet; then
-          echo "No changes to commit"
-        else
-          git commit -m "Auto update PTT data: $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git push origin master
-        fi
+        # 提交變更，如果沒有新資料則不報錯
+        git commit -m "Auto update PTT data: $(date -u +'%Y-%m-%d %H:%M UTC')" || echo "No changes to commit"
+
+        git push origin master
