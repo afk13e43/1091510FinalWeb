@@ -6,6 +6,12 @@ on:
     # 台灣時間每天早上 8 點執行 (UTC 00:00)
     - cron: '19 0 * * *'
   workflow_dispatch: # 保留手動執行按鈕
+  push:
+    branches: [master]
+    paths:
+      - 'scraper.py'
+      - 'requirements.txt'
+      - '.github/workflows/main.yml'
 
 jobs:
   build:
