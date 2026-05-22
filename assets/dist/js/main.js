@@ -203,7 +203,8 @@ window.onload = function () {
             }
             $("#gameTable").css("border", "solid");
             $("#haka_button").on("click", function () {
-                var ram = Math.floor(Math.random() * all.length) - 1;
+                if (all.length === 0) return;
+                var ram = Math.floor(Math.random() * all.length);
                 window.open(all[ram]['商品網址']);
             })
             $("#alll").on("click", function () {

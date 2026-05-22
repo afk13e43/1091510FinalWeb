@@ -18,22 +18,21 @@ jobs:
     steps:
     # 2. 檢出程式碼
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
-        # 確保抓取最新狀態，避免追加時版本衝突
         persist-credentials: true
         fetch-depth: 0
 
     # 3. 安裝 Python 環境
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
     # 4. 安裝爬蟲需要的套件
     - name: Install dependencies
       run: |
-        pip install requests beautifulsoup4
+        pip install -r requirements.txt
 
     # 5. 執行爬蟲腳本
     - name: Run scraper
@@ -42,18 +41,19 @@ jobs:
     # 6. 將更新後的 ptt_game.json 存回 GitHub
     - name: Commit and push changes
       run: |
-        # 設定機器人身份
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        
-        # 再次拉取最新變動，防止在爬蟲執行期間有人修改了檔案
-        git pull origin master
-        
-        # 加入更新後的資料檔
+
+        # 用 fetch+rebase 取代 pull，避免分歧時產生 merge commit
+        git fetch origin master
+        git rebase origin/master || git rebase --abort
+
         git add ptt_game.json
-        
-        # 提交變更，如果沒有新資料則不報錯 (使用 || echo)
-        git commit -m "Auto update PTT data: $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
-        
-        # 推回儲存庫
-        git push origin master
+
+        # 明確判斷是否有變更，比 `commit || echo` 更可靠
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto update PTT data: $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push origin master
+        fi
