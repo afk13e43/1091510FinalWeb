@@ -1,1053 +1,204 @@
-var all;
-let myMap = new Map();
-var wish;
-var temp2;
-var data3 = [];
-var dataPS4 = [];
-var dataNS = [];
-var dataXBOX = [];
-var lineChartData = {
-    labels: [], //顯示區間名稱
-    datasets: [{
-        label: '全平台每日討論量', // tootip 出現的名稱
-        lineTension: 0, // 曲線的彎度，設0 表示直線
-        backgroundColor: "#707038",
-        borderColor: "#707038",
-        borderWidth: 5,
-        data: data3,
-        fill: false, // 是否填滿色彩
-    }, {
-        label: 'PS平台討論量',
-        lineTension: 0,
-        fill: false,
-        backgroundColor: "#2828FF",
-        borderColor: "#2828FF",
-        borderWidth: 5,
-        data: dataPS4,
-    }, {
-        label: 'NS平台討論量',
-        lineTension: 0,
-        fill: false,
-        backgroundColor: "#FF0000",
-        borderColor: "#FF0000",
-        borderWidth: 5,
-        data: dataNS,
-    }, {
-        label: 'XBOX平台討論量',
-        lineTension: 0,
-        fill: false,
-        backgroundColor: "#00EC00",
-        borderColor: "#00EC00",
-        borderWidth: 5,
-        data: dataXBOX,
-    },
-    ]
+// === 全域狀態 ===
+let all = [];
+let wish = JSON.parse(localStorage.getItem('wishlist') || '[]');
+let chartCtx;
+let chart;
+let dateLabels = [];        // chart x 軸：所有日期由舊到新
+let labelIndex = new Map(); // 'YYYY/M/D' -> dateLabels 中的 index
+let chartData = { all: [], ps: [], ns: [], xbox: [] };
+
+// === 平台判定 ===
+const PLATFORM_TESTS = {
+    '1': () => true,
+    '2': (it) => /\bPS\s*[345]?\b/i.test(it['品項']),
+    '3': (it) => /\b(XBOX|XSX|XSS)\b/i.test(it['品項']),
+    '4': (it) => /\b(NS|Switch|任天堂)\b/i.test(it['品項']),
 };
-function drawLineCanvas(ctx, data) {
-    if (window.myLine instanceof Chart) {
-        window.myLine.destroy();
-    }
-    window.myLine = new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: {
-            responsive: true,
-            // --- 在這裡新增這兩行 ---
-            maintainAspectRatio: true, // 告訴圖表：「請維持我設定的長寬比例」
-            aspectRatio: 2.5,          // 數值越大，圖表會越扁（例如 2.5 代表寬度是高度的 2.5 倍）
-            // -----------------------
-            legend: {
-                display: true,
-            },
-            tooltips: {
-                enabled: true
-            },
-            scales: {
-                xAxes: [{
-                    display: true
-                }],
-                yAxes: [{
-                    display: true
-                }]
-            },
-        }
-    });
-};
-function addData(chart, label, data) {
-    chart.data.labels.push(label);
-    chart.data.datasets.forEach((dataset) => {
-        dataset.data.push(data);
-    });
-    chart.update();
+
+// === 共用 helper ===
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function formatDate(ts) {
+    if (typeof ts !== 'number') return '未知';
+    const d = new Date(ts * 1000);
+    return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ` +
+           `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
+
+function dateKey(ts) {
+    if (typeof ts !== 'number') return null;
+    const d = new Date(ts * 1000);
+    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+function currentPlatformTest() {
+    const v = $('input[name=game_type]:checked').val() || '1';
+    return PLATFORM_TESTS[v] || PLATFORM_TESTS['1'];
+}
+
+// === 渲染表格 ===
+function rowHtml(item, actionLabel) {
+    return `<tr>
+        <td style="border:solid">${item.id}</td>
+        <td width="20%" style="border:solid">${escapeHtml(formatDate(item['日期']))}</td>
+        <td width="40%" style="border:solid">
+            <a target="_blank" rel="noopener" href="${escapeHtml(item['商品網址'])}">${escapeHtml(item['品項'])}</a>
+            <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" data-action="${actionLabel}" data-id="${item.id}">${actionLabel}</button>
+        </td>
+        <td width="100%" style="border:solid">${escapeHtml(item['售價'])}</td>
+    </tr>`;
+}
+
+function renderTable(items) {
+    if (!items.length) {
+        $('#gameTable').html(
+            `<tr><td colspan="4" style="text-align:center;padding:2em;color:#888;border:solid">沒有符合條件的資料</td></tr>`
+        );
+        return;
+    }
+    $('#gameTable').html(items.map((it) => rowHtml(it, '新增')).join(''));
+}
+
+function renderWishlist() {
+    if (!wish.length) {
+        $('#wish_list').html(
+            `<tr><td colspan="4" style="text-align:center;padding:2em;color:#888">關注清單目前是空的</td></tr>`
+        );
+        return;
+    }
+    $('#wish_list').html(wish.map((it) => rowHtml(it, '刪除')).join(''));
+}
+
+// === 篩選 ===
+function filterItems() {
+    const test = currentPlatformTest();
+    const q = ($('#game_name').val() || '').trim().toLowerCase();
+    return all.filter((it) => {
+        if (!test(it)) return false;
+        if (q && !String(it['品項']).toLowerCase().includes(q)) return false;
+        return true;
+    });
+}
+
+// === 圖表 ===
+function recomputeChart(items) {
+    const len = dateLabels.length;
+    const counts = {
+        all:  new Array(len).fill(0),
+        ps:   new Array(len).fill(0),
+        ns:   new Array(len).fill(0),
+        xbox: new Array(len).fill(0),
+    };
+    for (const it of items) {
+        const key = dateKey(it['日期']);
+        if (key == null || !labelIndex.has(key)) continue;
+        const idx = labelIndex.get(key);
+        counts.all[idx] += 1;
+        if (PLATFORM_TESTS['2'](it)) counts.ps[idx]   += 1;
+        if (PLATFORM_TESTS['3'](it)) counts.xbox[idx] += 1;
+        if (PLATFORM_TESTS['4'](it)) counts.ns[idx]   += 1;
+    }
+    chartData = counts;
+    drawChart();
+}
+
+function drawChart() {
+    if (chart instanceof Chart) chart.destroy();
+    chart = new Chart(chartCtx, {
+        type: 'line',
+        data: {
+            labels: dateLabels,
+            datasets: [
+                { label: '全平台每日討論量', data: chartData.all,  borderColor: '#707038', backgroundColor: '#707038', borderWidth: 4, lineTension: 0, fill: false },
+                { label: 'PS 平台討論量',    data: chartData.ps,   borderColor: '#2828FF', backgroundColor: '#2828FF', borderWidth: 4, lineTension: 0, fill: false },
+                { label: 'NS 平台討論量',    data: chartData.ns,   borderColor: '#FF0000', backgroundColor: '#FF0000', borderWidth: 4, lineTension: 0, fill: false },
+                { label: 'XBOX 平台討論量',  data: chartData.xbox, borderColor: '#00EC00', backgroundColor: '#00EC00', borderWidth: 4, lineTension: 0, fill: false },
+            ],
+        },
+        options: { responsive: true, maintainAspectRatio: true, aspectRatio: 2.5 },
+    });
+}
+
+// === 事件 ===
+function applyTableOnly() {
+    renderTable(filterItems());
+}
+
+function applyFull() {
+    const items = filterItems();
+    renderTable(items);
+    recomputeChart(items);
+}
+
+function bindEvents() {
+    $('input[name=game_type]').on('change', applyTableOnly);
+    $('#game_name_button').on('click', applyFull);
+    $('#game_name').on('keydown', (e) => { if (e.key === 'Enter') applyFull(); });
+    $('#clear_search').on('click', () => {
+        $('#game_name').val('');
+        $('#alll').prop('checked', true);
+        applyFull();
+    });
+    $('#haka_button').on('click', () => {
+        if (!all.length) return;
+        const i = Math.floor(Math.random() * all.length);
+        window.open(all[i]['商品網址']);
+    });
+    $('#gameTable').on('click', 'button[data-action="新增"]', function () {
+        const id = parseInt($(this).attr('data-id'), 10);
+        const item = all.find((it) => it.id === id);
+        if (!item) return;
+        if (wish.some((w) => w['商品網址'] === item['商品網址'])) {
+            alert('已經加入清單！');
+            return;
+        }
+        wish.push(item);
+        localStorage.setItem('wishlist', JSON.stringify(wish));
+        renderWishlist();
+    });
+    $('#wish_list').on('click', 'button[data-action="刪除"]', function () {
+        const url = all.find((it) => it.id === parseInt($(this).attr('data-id'), 10))?.['商品網址'];
+        wish = wish.filter((it) => it['商品網址'] !== url);
+        localStorage.setItem('wishlist', JSON.stringify(wish));
+        renderWishlist();
+    });
+}
+
+// === 啟動 ===
 window.onload = function () {
-    var Game;
-    let url = "./ptt_game.json";
-    var storedWish = localStorage.getItem("wishlist");
-    wish = storedWish ? JSON.parse(storedWish) : [];
-            for(var e =0;e<wish.length;e++)
-            {
-                if (wish[e]['日期'] != "未知") {
-                    var date = new Date(wish[e]['日期'] * 1000);
-                    $("#wish_list").append("<tr>"
-                        + `<td  style="border:solid">${wish[e]['id']}</td>`
-                        + `<td width="20%" style=" border:solid">${date.getFullYear() +
-                        "/" + (date.getMonth() + 1) +
-                        "/" + (date.getDate()) +
-                        " " + date.getHours() +
-                        ":" + date.getMinutes() +
-                        ":" + date.getSeconds()}</td>`
-                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${wish[e]['商品網址']}">${wish[e]['品項']}</a>
-                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'刪除'}</button></td>`
-                        + `<td  width="100%" style="border:solid">${wish[e]['售價']}</td>`
-                        + "</tr>");
-                }
-                else {
-                    $("#wish_list").append("<tr>"
-                        + `<td  style="border:solid">${wish[e]['id']}</td>`
-                        + `<td width="10%" style=" border:solid">${wish[e]['日期']}</td>`
-                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${wish[e]['商品網址']}">${wish[e]['品項']}</a>
-                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${wish[e]['id']}>${'刪除'}</button></td>`
-                        + `<td  width="100%" style="border:solid">${wish[e]['售價']}</td>`
-                        + "</tr>");
-                }
-            }
-    var set1 = new Set();
-    $.getJSON(url)
+    chartCtx = $('#canvas1')[0];
+    renderWishlist();
+
+    $.getJSON('./ptt_game.json')
         .done(function (msg) {
-            all = msg.game_list;
-            for (var t = 0; t < all.length; t++) {
-                var date = new Date(all[t]['日期'] * 1000);
-                var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
-                if (all[t]['日期'] != "未知") {
-                    set1.add(date2);
-                }
+            all = (msg && msg.game_list) || [];
+
+            // 建立 chart 的 x 軸：所有出現過的日期，由舊到新
+            const dateSet = new Set();
+            for (const it of all) {
+                const key = dateKey(it['日期']);
+                if (key !== null) dateSet.add(key);
             }
-            set1.forEach(function (da) {
-                lineChartData.labels.push(da);
-            }
-            );
-            for (var t = 0; t < all.length; t++) {
-                var date = new Date(all[t]['日期'] * 1000);
-                var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
-                if (set1.has(date2)) {
-                    var ans = 0;
-                    for (var e = 0; e < lineChartData.labels.length; e++) {
-                        if (lineChartData.labels[e] == date2) {
-                            ans = e;
-                            break;
-                        }
-                    }
-                    myMap.set(date2, ans);
-                }
-            }
-            for (var j = 0; j < lineChartData.labels.length; j++) {
-                data3.push(0);
-                dataNS.push(0);
-                dataPS4.push(0);
-                dataXBOX.push(0);
-            }
-            for (var t = 0; t < all.length; t++) {
-                var date = new Date(all[t]['日期'] * 1000);
-                var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
-                if (set1.has(date2)) {
-                    data3[myMap.get(date2)] = data3[myMap.get(date2)] + 1;
-                    var str = all[t]['品項'];
-                    if (str.includes("XBOX")) {
-                        dataXBOX[myMap.get(date2)] = dataXBOX[myMap.get(date2)] + 1;
-                    }
-                    if (str.includes("PS")) {
-                        dataPS4[myMap.get(date2)] = dataPS4[myMap.get(date2)] + 1;
-                    }
-                    if (str.includes("NS")) {
-                        dataNS[myMap.get(date2)] = dataNS[myMap.get(date2)] + 1;
-                    }
-                }
-            }
-            lineChartData.labels = lineChartData.labels.reverse();
-            data3 = data3.reverse();
-            dataNS = dataNS.reverse();
-            dataXBOX = dataXBOX.reverse();
-            dataPS4 = dataPS4.reverse();
-            var ctx = $('#canvas1')[0];
-            drawLineCanvas(ctx, lineChartData);
-            $("#gameTable").empty();
-            for (j = 0; j < all.length; j++){
-                        Game = all[j];
-                        console.log(Game);
-                        if (Game['日期'] != "未知") {
-                            var date = new Date(Game['日期'] * 1000);
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${Game['id']}</td>`
-                                + `<td width="20%" style=" border:solid">${date.getFullYear() +
-                                "/" + (date.getMonth() + 1) +
-                                "/" + (date.getDate()) +
-                                " " + date.getHours() +
-                                ":" + date.getMinutes() +
-                                ":" + date.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${Game['商品網址']}">${Game['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${Game['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
-                                + "</tr>");
-                                
-                        }
-                        else {
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${Game['id']}</td>`
-                                + `<td width="10%" style=" border:solid">${Game['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${Game['商品網址']}">${Game['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${Game['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${Game['售價']}</td>`
-                                + "</tr>");
-                        }
-            }
-            $("#gameTable").css("border", "solid");
-            $("#haka_button").on("click", function () {
-                if (all.length === 0) return;
-                var ram = Math.floor(Math.random() * all.length);
-                window.open(all[ram]['商品網址']);
-            })
-            $("#alll").on("click", function () {
-                $("#gameTable").text("");
-                drawLineCanvas(ctx, lineChartData);
-                for (var t = 0; t < all.length; t++) {
-                    console.log($('input[name=game_type]:checked').val());
-                    if ($('input[name=game_type]:checked').val() == 1) {
-                        if (all[t]['日期'] != "未知") {
-                            var date1 = new Date(all[t]['日期'] * 1000);
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                "/" + (date1.getMonth() + 1) +
-                                "/" + (date1.getDate()) +
-                                " " + date1.getHours() +
-                                ":" + date1.getMinutes() +
-                                ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                        else {
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 2) {
-                        if (all[t]['品項'].includes("PS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 3) {
-                        if (all[t]['品項'].includes("XBOX")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    } else if ($('input[name=game_type]:checked').val() == 4) {
-                        if (all[t]['品項'].includes("NS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                }
-
+            dateLabels = Array.from(dateSet).sort((a, b) => {
+                const [ya, ma, da] = a.split('/').map(Number);
+                const [yb, mb, db] = b.split('/').map(Number);
+                return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
             });
-            $("#ps").on("click", function () {
+            labelIndex = new Map(dateLabels.map((k, i) => [k, i]));
 
-                $("#gameTable").text("");
-                drawLineCanvas(ctx, lineChartData);
-                for (var t = 0; t < all.length; t++) {
-                    console.log($('input[name=game_type]:checked').val());
-                    if ($('input[name=game_type]:checked').val() == 1) {
-                        if (all[t]['日期'] != "未知") {
-                            var date1 = new Date(all[t]['日期'] * 1000);
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                "/" + (date1.getMonth() + 1) +
-                                "/" + (date1.getDate()) +
-                                " " + date1.getHours() +
-                                ":" + date1.getMinutes() +
-                                ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                        else {
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 2) {
-                        if (all[t]['品項'].includes("PS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 3) {
-                        if (all[t]['品項'].includes("XBOX")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    } else if ($('input[name=game_type]:checked').val() == 4) {
-                        if (all[t]['品項'].includes("NS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    }
-                }
-            });
-            $("#xbox").on("click", function () {
-                $("#gameTable").text("");
-                drawLineCanvas(ctx, lineChartData);
-                for (var t = 0; t < all.length; t++) {
-                    console.log($('input[name=game_type]:checked').val());
-                    if ($('input[name=game_type]:checked').val() == 1) {
-                        if (all[t]['日期'] != "未知") {
-                            var date1 = new Date(all[t]['日期'] * 1000);
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                "/" + (date1.getMonth() + 1) +
-                                "/" + (date1.getDate()) +
-                                " " + date1.getHours() +
-                                ":" + date1.getMinutes() +
-                                ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                        else {
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 2) {
-                        if (all[t]['品項'].includes("PS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 3) {
-                        if (all[t]['品項'].includes("XBOX")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    } else if ($('input[name=game_type]:checked').val() == 4) {
-                        if (all[t]['品項'].includes("NS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    }
-                }
-            });
-            $("#ns").on("click", function () {
-                $("#gameTable").text("");
-                drawLineCanvas(ctx, lineChartData);
-                for (var t = 0; t < all.length; t++) {
-                    console.log($('input[name=game_type]:checked').val());
-                    if ($('input[name=game_type]:checked').val() == 1) {
-                        if (all[t]['日期'] != "未知") {
-                            var date1 = new Date(all[t]['日期'] * 1000);
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                "/" + (date1.getMonth() + 1) +
-                                "/" + (date1.getDate()) +
-                                " " + date1.getHours() +
-                                ":" + date1.getMinutes() +
-                                ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                        else {
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 2) {
-                        if (all[t]['品項'].includes("PS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 3) {
-                        if (all[t]['品項'].includes("XBOX")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    } else if ($('input[name=game_type]:checked').val() == 4) {
-                        if (all[t]['品項'].includes("NS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                }
-            });
-            $("#clear_search").on("click", function () {
-                for (var j = 0; j < lineChartData.labels.length; j++) {
-                    data3[j] = 0;
-                    dataNS[j] = 0;
-                    dataPS4[j] = 0;
-                    dataXBOX[j] = 0;
-                }
-                $("#game_name").val("");
-                for (var t = 0; t < all.length; t++) {
-                    var date = new Date(all[t]['日期'] * 1000);
-                    var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
-                    if (set1.has(date2)) {
-                        data3[myMap.get(date2)] = data3[myMap.get(date2)] + 1;
-                        var str = all[t]['品項'];
-                        if (str.includes("XBOX")) {
-                            dataXBOX[myMap.get(date2)] = dataXBOX[myMap.get(date2)] + 1;
-                        }
-                        if (str.includes("PS")) {
-                            dataPS4[myMap.get(date2)] = dataPS4[myMap.get(date2)] + 1;
-                        }
-                        if (str.includes("NS")) {
-                            dataNS[myMap.get(date2)] = dataNS[myMap.get(date2)] + 1;
-                        }
-                    }
-                }
-                data3 = data3.reverse();
-                dataNS = dataNS.reverse();
-                dataXBOX = dataXBOX.reverse();
-                dataPS4 = dataPS4.reverse();
-                ctx.width = ctx.width;
-                $("#game_name").text("");
-                $("#gameTable").text("");
-                drawLineCanvas(ctx, lineChartData);
-                for (var t = 0; t < all.length; t++) {
-                    console.log($('input[name=game_type]:checked').val());
-                    if ($('input[name=game_type]:checked').val() == 1) {
-                        if (all[t]['日期'] != "未知") {
-                            var date1 = new Date(all[t]['日期'] * 1000);
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                "/" + (date1.getMonth() + 1) +
-                                "/" + (date1.getDate()) +
-                                " " + date1.getHours() +
-                                ":" + date1.getMinutes() +
-                                ":" + date1.getSeconds()}</td>`
-                                + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                        else {
-                            $("#gameTable").append("<tr>"
-                                + `<td  style="border:solid">${all[t]['id']}</td>`
-                                + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                + "</tr>");
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 2) {
-                        if (all[t]['品項'].includes("PS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 3) {
-                        if (all[t]['品項'].includes("XBOX")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-
-                    } else if ($('input[name=game_type]:checked').val() == 4) {
-                        if (all[t]['品項'].includes("NS")) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-
-                }
-            })
-
-            $("#game_name_button").on("click", function () {
-
-                if ($("#game_name").val() == "") {
-                    return;
-                }
-                for (var j = 0; j < lineChartData.labels.length; j++) {
-                    data3[j] = 0;
-                    dataNS[j] = 0;
-                    dataPS4[j] = 0;
-                    dataXBOX[j] = 0;
-                }
-                for (var t = 0; t < all.length; t++) {
-                    var date = new Date(all[t]['日期'] * 1000);
-                    var date2 = date.getFullYear() + '/' + (date.getMonth() + 1) + "/" + date.getDate();
-                    var str3 = all[t]['品項'];
-                    if (str3.includes($("#game_name").val())) {
-                        if (set1.has(date2)) {
-                            data3[myMap.get(date2)] = data3[myMap.get(date2)] + 1;
-                            if (str3.includes("XBOX")) {
-                                dataXBOX[myMap.get(date2)] = dataXBOX[myMap.get(date2)] + 1;
-                            }
-                            if (str3.includes("PS")) {
-                                dataPS4[myMap.get(date2)] = dataPS4[myMap.get(date2)] + 1;
-                            }
-                            if (str3.includes("NS")) {
-                                dataNS[myMap.get(date2)] = dataNS[myMap.get(date2)] + 1;
-                            }
-                        }
-                    }
-                }
-                data3 = data3.reverse();
-                dataNS = dataNS.reverse();
-                dataXBOX = dataXBOX.reverse();
-                dataPS4 = dataPS4.reverse();
-                ctx.width = ctx.width;
-                drawLineCanvas(ctx, lineChartData);
-                $("#gameTable").text("");
-                for (var t = 0; t < all.length; t++) {
-                    var str3 = all[t]['品項'];
-                    if ($('input[name=game_type]:checked').val() == 1) {
-
-                        if (str3.includes($("#game_name").val())) {
-                            if (all[t]['日期'] != "未知") {
-                                var date1 = new Date(all[t]['日期'] * 1000);
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                    "/" + (date1.getMonth() + 1) +
-                                    "/" + (date1.getDate()) +
-                                    " " + date1.getHours() +
-                                    ":" + date1.getMinutes() +
-                                    ":" + date1.getSeconds()}</td>`
-                                    + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                            else {
-                                $("#gameTable").append("<tr>"
-                                    + `<td  style="border:solid">${all[t]['id']}</td>`
-                                    + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                    + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                    <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                    + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                    + "</tr>");
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 2) {
-                        if (str3.includes("PS")) {
-                            if (str3.includes($("#game_name").val())) {
-                                if (all[t]['日期'] != "未知") {
-                                    var date1 = new Date(all[t]['日期'] * 1000);
-                                    $("#gameTable").append("<tr>"
-                                        + `<td  style="border:solid">${all[t]['id']}</td>`
-                                        + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                        "/" + (date1.getMonth() + 1) +
-                                        "/" + (date1.getDate()) +
-                                        " " + date1.getHours() +
-                                        ":" + date1.getMinutes() +
-                                        ":" + date1.getSeconds()}</td>`
-                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                        + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                        + "</tr>");
-                                }
-                                else {
-                                    $("#gameTable").append("<tr>"
-                                        + `<td  style="border:solid">${all[t]['id']}</td>`
-                                        + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                        + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                        + "</tr>");
-                                }
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 3) {
-                        if (str3.includes("XBOX")) {
-                            if (str3.includes($("#game_name").val())) {
-                                if (all[t]['日期'] != "未知") {
-                                    var date1 = new Date(all[t]['日期'] * 1000);
-                                    $("#gameTable").append("<tr>"
-                                        + `<td  style="border:solid">${all[t]['id']}</td>`
-                                        + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                        "/" + (date1.getMonth() + 1) +
-                                        "/" + (date1.getDate()) +
-                                        " " + date1.getHours() +
-                                        ":" + date1.getMinutes() +
-                                        ":" + date1.getSeconds()}</td>`
-                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                        + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                        + "</tr>");
-                                }
-                                else {
-                                    $("#gameTable").append("<tr>"
-                                        + `<td  style="border:solid">${all[t]['id']}</td>`
-                                        + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                        + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                        + "</tr>");
-                                }
-                            }
-                        }
-                    }
-                    else if ($('input[name=game_type]:checked').val() == 4) {
-                        if (str3.includes("NS")) {
-                            if (str3.includes($("#game_name").val())) {
-                                if (all[t]['日期'] != "未知") {
-                                    var date1 = new Date(all[t]['日期'] * 1000);
-                                    $("#gameTable").append("<tr>"
-                                        + `<td  style="border:solid">${all[t]['id']}</td>`
-                                        + `<td width="20%" style=" border:solid">${date1.getFullYear() +
-                                        "/" + (date1.getMonth() + 1) +
-                                        "/" + (date1.getDate()) +
-                                        " " + date1.getHours() +
-                                        ":" + date1.getMinutes() +
-                                        ":" + date1.getSeconds()}</td>`
-                                        + `<td width="40%" style=" border:solid"><a  target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                        + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                        + "</tr>");
-                                }
-                                else {
-                                    $("#gameTable").append("<tr>"
-                                        + `<td  style="border:solid">${all[t]['id']}</td>`
-                                        + `<td width="10%" style=" border:solid">${all[t]['日期']}</td>`
-                                        + `<td width="30%" style=" border:solid"><a target="_blank" href="${all[t]['商品網址']}">${all[t]['品項']}</a>
-                                        <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[t]['id']}>${'新增'}</button></td>`
-                                        + `<td  width="100%" style="border:solid">${all[t]['售價']}</td>`
-                                        + "</tr>");
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-            });
-            $('#gameTable').on('click', 'button', function () {
-                if ($("#wish_list").html().includes(all[($(this).attr("id") - 1)]['品項']) == false || $("#wish_list").html().includes(all[($(this).attr("id") - 1)]['售價']) == false) {
-                    var newItem = {
-                        "日期": all[($(this).attr("id") - 1)]['日期'],
-                        "品項": all[($(this).attr("id") - 1)]['品項'],
-                        "售價": all[($(this).attr("id") - 1)]['售價'],
-                        "商品網址": all[($(this).attr("id") - 1)]['商品網址'],
-                        "id": all[($(this).attr("id") - 1)]['id']
-                    };
-                    wish.push(newItem);
-                    localStorage.setItem("wishlist", JSON.stringify(wish));
-
-                    if (all[($(this).attr("id") - 1)]['日期'] != "未知") {
-                        var date1 = new Date(all[($(this).attr("id") - 1)]['日期'] * 1000);
-                        $("#wish_list").append("<tr>"
-                            + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
-                            + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${date1.getFullYear() +
-                            "/" + (date1.getMonth() + 1) +
-                            "/" + (date1.getDate()) +
-                            " " + date1.getHours() +
-                            ":" + date1.getMinutes() +
-                            ":" + date1.getSeconds()}</td>`
-                            + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
-                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
-                            + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
-                            + "</tr>");
-                    }
-                    else {
-                        $("#wish_list").append("<tr>"
-                            + `<td id=${$(this).attr("id")} style="border:solid">${all[($(this).attr("id") - 1)]['id']}</td>`
-                            + `<td id=${$(this).attr("id")} width="10%" style=" border:solid">${all[($(this).attr("id") - 1)]['日期']}</td>`
-                            + `<td id=${$(this).attr("id")}  width="50%" style=" border:solid"><a target="_blank" href="${all[($(this).attr("id") - 1)]['商品網址']}">${all[($(this).attr("id") - 1)]['品項']}</a>
-                <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" id = ${all[($(this).attr("id") - 1)]['id']}>${'刪除'}</button></td>`
-                            + `<td id=${$(this).attr("id")}  width="40%" style="border:solid">${all[($(this).attr("id") - 1)]['售價']}</td>`
-                            + "</tr>");
-
-                    }
-
-
-                }
-                else {
-                    alert("已經加入清單！");
-                }
-
-            });
-            $('#wish_list').on('click', 'button', function () {
-                console.log($(this).attr("id"));
-                $(this).closest('tr').remove();
-                var idToRemove = $(this).attr("id");
-                wish = wish.filter(function(item) {
-                    return item.id != idToRemove;
-                });
-                localStorage.setItem("wishlist", JSON.stringify(wish));
-            });
-
-
+            applyFull();
+            bindEvents();
         })
-        .fail(function (msg) {
-            console.log("Fail!");
+        .fail(function () {
+            console.error('Failed to load ptt_game.json');
+            $('#gameTable').html(
+                `<tr><td colspan="4" style="text-align:center;padding:2em;color:#c00;border:solid">資料載入失敗</td></tr>`
+            );
         });
 };
