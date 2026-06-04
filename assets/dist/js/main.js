@@ -26,6 +26,53 @@ function parsePrice(str) {
     return m ? Number(m[1]) : NaN;
 }
 
+// 搜尋字串 normalize：NFKC（全形→半形）+ 小寫
+function normalize(s) {
+    return String(s == null ? '' : s).normalize('NFKC').toLowerCase();
+}
+
+// 把輸入框的字串切成多個 token，全部都得 match 才算命中
+function searchTokens() {
+    return normalize($('#game_name').val()).split(/\s+/).filter(Boolean);
+}
+
+function matchesTokens(text, tokens) {
+    if (!tokens.length) return true;
+    const haystack = normalize(text);
+    return tokens.every((t) => haystack.includes(t));
+}
+
+function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 把命中的 token 用 <mark> 包起來。輸出已 HTML-escape，可以直接塞到 innerHTML。
+// 註：tokens 是 NFKC normalize 過的；若原文是全形，filter 仍會通過，但這裡 regex
+//     對原文的高亮會 miss — 屬於可接受的 best-effort 行為。
+function highlightHtml(text, tokens) {
+    const raw = String(text == null ? '' : text);
+    if (!tokens.length) return escapeHtml(raw);
+    const pattern = new RegExp(tokens.map(escapeRegex).join('|'), 'gi');
+    let out = '';
+    let last = 0;
+    raw.replace(pattern, (match, offset) => {
+        out += escapeHtml(raw.slice(last, offset));
+        out += '<mark>' + escapeHtml(match) + '</mark>';
+        last = offset + match.length;
+        return match;
+    });
+    out += escapeHtml(raw.slice(last));
+    return out;
+}
+
+function debounce(fn, ms) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+}
+
 const SORTERS = {
     date_desc:  (a, b) => (typeof b['日期'] === 'number' ? b['日期'] : 0) - (typeof a['日期'] === 'number' ? a['日期'] : 0),
     date_asc:   (a, b) => (typeof a['日期'] === 'number' ? a['日期'] : Infinity) - (typeof b['日期'] === 'number' ? b['日期'] : Infinity),
@@ -60,12 +107,12 @@ function currentPlatformTest() {
 }
 
 // === 渲染表格 ===
-function rowHtml(item, actionLabel) {
+function rowHtml(item, actionLabel, tokens) {
     return `<tr>
         <td style="border:solid">${item.id}</td>
         <td width="20%" style="border:solid">${escapeHtml(formatDate(item['日期']))}</td>
         <td width="40%" style="border:solid">
-            <a target="_blank" rel="noopener" href="${escapeHtml(item['商品網址'])}">${escapeHtml(item['品項'])}</a>
+            <a target="_blank" rel="noopener" href="${escapeHtml(item['商品網址'])}">${highlightHtml(item['品項'], tokens || [])}</a>
             <button type="button" style="float:right;" class="btn btn-outline-secondary d-inline-flex align-items-center" data-action="${actionLabel}" data-id="${item.id}">${actionLabel}</button>
         </td>
         <td width="100%" style="border:solid">${escapeHtml(item['售價'])}</td>
@@ -73,13 +120,14 @@ function rowHtml(item, actionLabel) {
 }
 
 function renderTable(items) {
+    const tokens = searchTokens();
     if (!items.length) {
         $('#gameTable').html(
             `<tr><td colspan="4" style="text-align:center;padding:2em;color:#888;border:solid">沒有符合條件的資料</td></tr>`
         );
         return;
     }
-    $('#gameTable').html(items.map((it) => rowHtml(it, '新增')).join(''));
+    $('#gameTable').html(items.map((it) => rowHtml(it, '新增', tokens)).join(''));
 }
 
 function renderWishlist() {
@@ -89,13 +137,22 @@ function renderWishlist() {
         );
         return;
     }
-    $('#wish_list').html(wish.map((it) => rowHtml(it, '刪除')).join(''));
+    $('#wish_list').html(wish.map((it) => rowHtml(it, '刪除', [])).join(''));
+}
+
+function updateResultCount(n) {
+    const q = ($('#game_name').val() || '').trim();
+    const platformV = $('input[name=game_type]:checked').val() || '1';
+    const hasMin = $('#price_min').val() !== '';
+    const hasMax = $('#price_max').val() !== '';
+    const isFiltered = q !== '' || hasMin || hasMax || platformV !== '1';
+    $('#result_count').text(isFiltered ? `找到 ${n} 筆符合條件的資料` : `共 ${n} 筆資料`);
 }
 
 // === 篩選 ===
 function filterItems() {
     const test = currentPlatformTest();
-    const q = ($('#game_name').val() || '').trim().toLowerCase();
+    const tokens = searchTokens();
     const minRaw = $('#price_min').val();
     const maxRaw = $('#price_max').val();
     const min = minRaw === '' || minRaw == null ? -Infinity : Number(minRaw);
@@ -104,7 +161,7 @@ function filterItems() {
 
     const filtered = all.filter((it) => {
         if (!test(it)) return false;
-        if (q && !String(it['品項']).toLowerCase().includes(q)) return false;
+        if (!matchesTokens(it['品項'], tokens)) return false;
         if (min !== -Infinity || max !== Infinity) {
             const p = parsePrice(it['售價']);
             if (!Number.isFinite(p)) return false;     // 篩價格時，無法解析價格者排除
@@ -157,12 +214,15 @@ function drawChart() {
 
 // === 事件 ===
 function applyTableOnly() {
-    renderTable(filterItems());
+    const items = filterItems();
+    renderTable(items);
+    updateResultCount(items.length);
 }
 
 function applyFull() {
     const items = filterItems();
     renderTable(items);
+    updateResultCount(items.length);
     recomputeChart(items);
 }
 
@@ -170,6 +230,9 @@ function bindEvents() {
     $('input[name=game_type]').on('change', applyTableOnly);
     $('#sort_by').on('change', applyTableOnly);
     $('#price_min, #price_max').on('input', applyTableOnly);
+    // 即時搜尋（debounced 200ms），只更新表格，不重建 chart 避免閃爍
+    $('#game_name').on('input', debounce(applyTableOnly, 200));
+    // 按 Enter 或按鈕做完整搜尋（同步更新 chart）
     $('#game_name_button').on('click', applyFull);
     $('#game_name').on('keydown', (e) => { if (e.key === 'Enter') applyFull(); });
     $('#clear_search').on('click', () => {
