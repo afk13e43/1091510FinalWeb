@@ -1,199 +1,237 @@
 # -*- coding: utf-8 -*-
 """
-PTT Gamesale 爬蟲 - 終極修復版
-功能：修正縮排、防空鎖定、追加模式
+PTT Gamesale 爬蟲
+- 抓取列表頁與文章內容，解析日期 / 品項 / 售價 / 商品網址
+- 與既有 JSON 合併、依商品網址去重、依日期排序、保留最新 1000 筆
 """
-import requests 
-import bs4
+import calendar
 import json
-import time
 import os
+import re
+import time
 
-# --- 設定區 ---
+import bs4
+import requests
+
 URL = "https://www.ptt.cc/bbs/Gamesale/index.html"
-my_headers = {
+MY_HEADERS = {
     'cookie': 'over18=1;',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
-jsonfile = "ptt_game.json"
+JSON_FILE = "ptt_game.json"
 
-# --- 第一階段：抓取列表頁連結 ---
-print("正在讀取列表頁...")
-max_retries = 3
-success = False
-response = None
+# 列表頁要往回翻幾頁
+LOOKBACK_PAGES = 20
 
-# 執行重試機制
-for attempt in range(max_retries):
-    try:
-        response = requests.get(URL, headers=my_headers, timeout=15)
-        if response.status_code == 200:
-            success = True
-            break
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-        print(f"第 {attempt + 1} 次連線失敗: {e}，5秒後重試...")
-        time.sleep(5)
+# 跳過的標題關鍵字（不是販售文 / 已售出 / 公告 / 徵求）
+SKIP_KEYWORDS = ("[公告]", "已售", "售完", "結標", "徵 ")
 
-data_page_list = []
+# 售價數字 fallback：抓「售價」「價格」「$」後面的第一個數字
+PRICE_FALLBACK_RE = re.compile(
+    r'(?:售\s*[價价]|價\s*格|價錢|\$|NT\$?)\s*[:：]?\s*(\d{2,6})'
+)
 
-if not success:
-    print("多次重試失敗，PTT 目前可能完全封鎖此 IP。")
-else:
-    # --- 這裡開始縮排，代表連線成功後執行的邏輯 ---
-    try:
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-        header = soup.find_all(attrs={"class": "title"})
-        newest = soup.find_all(attrs={"class": "btn wide"})
 
-        # 取得上一頁連結
-        if len(newest) > 1:
-            temp = newest[1]
-            yeet = str(temp).split('"')
-            prev_page = "https://www.ptt.cc" + yeet[3]
-
-            # 處理首頁標題
-            for ele in header:
-                temp_str = str(ele)
-                if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
-                    data_page_list.append(ele)
-
-            # 往回抓取分頁 (你設定為 20 頁)
-            print(f"開始回溯抓取分頁...")
-            for i in range(0, 20):
-                res_p = requests.get(prev_page, headers=my_headers, timeout=10)
-                soup_p = bs4.BeautifulSoup(res_p.text, "html.parser")
-                header_p = soup_p.find_all(attrs={"class": "title"})
-                for ele in header_p:
-                    temp_str = str(ele)
-                    if "[公告]" not in temp_str and "售" in temp_str and "徵" not in temp_str:
-                        data_page_list.append(ele)
-
-                newest_p = soup_p.find_all(attrs={"class": "btn wide"})
-                if len(newest_p) > 1:
-                    yeet_p = str(newest_p[1]).split('"')
-                    prev_page = "https://www.ptt.cc" + yeet_p[3]
-                    print(f"已讀取第 {i+1} 個分頁: {prev_page}")
-                time.sleep(1.5) 
-        else:
-            print("找不到上一頁按鈕，可能結構改變")
-
-    except Exception as e:
-        print(f"抓取列表時發生錯誤: {e}")
-
-# --- 第二階段：解析文章內容 ---
-arrayofdict = []
-if len(data_page_list) > 0:
-    print(f"開始解析文章內容，共計 {len(data_page_list)} 篇...")
-    for index, ele in enumerate(data_page_list):
+def fetch(url, retries=3, timeout=15):
+    """帶重試的 GET，失敗時回傳 None。"""
+    for attempt in range(retries):
         try:
-            finaldict = {}
-            page_str = str(ele)
-            page_split = page_str.split('"')
-            if len(page_split) < 4:
+            resp = requests.get(url, headers=MY_HEADERS, timeout=timeout)
+            if resp.status_code == 200:
+                return resp
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            print(f"  連線失敗 ({attempt + 1}/{retries}): {e}")
+        time.sleep(3)
+    return None
+
+
+def is_sale_post(title_text):
+    """判斷標題是否為「還在販售中」的文章。"""
+    if "售" not in title_text:
+        return False
+    return not any(kw in title_text for kw in SKIP_KEYWORDS)
+
+
+def collect_links(start_url):
+    """從 start_url 開始往回翻頁，收集所有販售文連結與標題。"""
+    items = []  # list of (title, url)
+    next_url = start_url
+    pages_walked = 0
+
+    while next_url and pages_walked <= LOOKBACK_PAGES:
+        resp = fetch(next_url)
+        if resp is None:
+            print(f"  無法取得列表頁，停止往回翻：{next_url}")
+            break
+
+        soup = bs4.BeautifulSoup(resp.text, "html.parser")
+        for ele in soup.find_all(attrs={"class": "title"}):
+            a = ele.find("a")
+            if a is None:
                 continue
-
-            data_page = "https://www.ptt.cc" + page_split[3]
-
-            # 進入文章頁面
-            response_article = requests.get(data_page, headers=my_headers, timeout=10)
-            soup_article = bs4.BeautifulSoup(response_article.text, "html.parser")
-
-            # 解析日期
-            meta_values = soup_article.find_all('span', 'article-meta-value')
-            if len(meta_values) > 3:
-                date_raw = meta_values[3].text
-                try:
-                    finaldict['日期'] = time.mktime(time.strptime(date_raw, "%a %b %d %H:%M:%S %Y"))
-                except:
-                    finaldict['日期'] = "未知"
-            else:
-                finaldict['日期'] = "未知"
-
-            # 解析主體 (防錯處理)
-            main_container = soup_article.find(id='main-container')
-            if main_container is None:
+            title = a.get_text(strip=True)
+            href = a.get("href", "")
+            if not href or not is_sale_post(title):
                 continue
+            items.append((title, "https://www.ptt.cc" + href))
 
-            all_text = main_container.text
-            pre_text = all_text.split('--')[0]
-            contents = pre_text.split('\n')[2:]
+        # 找「上一頁」按鈕
+        btns = soup.find_all(attrs={"class": "btn wide"})
+        prev_a = None
+        for btn in btns:
+            if "上頁" in btn.get_text() or "‹" in btn.get_text():
+                prev_a = btn
+                break
+        if prev_a is None and len(btns) > 1:
+            prev_a = btns[1]  # 第一個通常是「最舊」，第二個是「上一頁」
 
-            # 標題處理
-            sale_title = page_split[4].strip('>').split("</a")[0]
+        if prev_a and prev_a.get("href"):
+            next_url = "https://www.ptt.cc" + prev_a["href"]
+            pages_walked += 1
+            print(f"  已讀第 {pages_walked} 頁列表，下一頁：{next_url}")
+            time.sleep(1.5)
+        else:
+            next_url = None
 
-            # 售價解析
-            money = ""
-            open_price_flag = 0
-            for line in contents:
-                if open_price_flag == 1:
-                    if "【" in line or "交易方式" in line:
-                        open_price_flag = 0
-                        break
-                    money += line
-                if '【售' in line:
-                    open_price_flag = 1
-                    money += line
+    return items
 
-            money = money.replace("    ", " ").replace("\u3000", "").replace("★", "").strip()
 
-            finaldict['品項'] = sale_title
-            finaldict["售價"] = money
-            finaldict['商品網址'] = data_page
-            finaldict['id'] = 0 
+def parse_date(meta_values):
+    """從 article-meta-value 解析發文時間，回傳 UTC unix timestamp。失敗回 '未知'。"""
+    if len(meta_values) <= 3:
+        return "未知"
+    date_raw = meta_values[3].get_text(strip=True)
+    try:
+        # 用 calendar.timegm 把 struct_time 當成 UTC，避免本機 / CI 時區差。
+        return float(calendar.timegm(time.strptime(date_raw, "%a %b %d %H:%M:%S %Y")))
+    except ValueError:
+        return "未知"
 
-            arrayofdict.append(finaldict)
-            if (len(arrayofdict) % 10 == 0):
-                print(f"目前進度: {len(arrayofdict)} 篇成功...")
 
-            time.sleep(2) # 保持緩慢，避免封鎖
+def parse_price(main_container):
+    """擷取售價字串。優先以「【售」標記區塊抓，找不到時退回 regex。"""
+    text = main_container.get_text()
+    pre_text = text.split('--')[0]  # 去掉簽名檔
+    lines = pre_text.split('\n')[2:]
 
-        except Exception as e:
+    # 主要策略：「【售」開頭直到「【」或「交易方式」結束
+    money_parts = []
+    capturing = False
+    for line in lines:
+        if capturing:
+            if "【" in line or "交易方式" in line:
+                break
+            money_parts.append(line)
+        if '【售' in line:
+            capturing = True
+            money_parts.append(line)
+
+    money = "".join(money_parts).replace("    ", " ").replace("　", "").replace("★", "").strip()
+    if money:
+        return money
+
+    # Fallback：regex 抓「售價：1234」這類 pattern 的第一個數字
+    match = PRICE_FALLBACK_RE.search(pre_text)
+    if match:
+        return f"$ {match.group(1)}"
+    return ""
+
+
+def parse_article(title, article_url):
+    """抓單一文章並解析；失敗回 None。"""
+    resp = fetch(article_url, retries=2, timeout=10)
+    if resp is None:
+        return None
+
+    soup = bs4.BeautifulSoup(resp.text, "html.parser")
+    main_container = soup.find(id='main-container')
+    if main_container is None:
+        return None
+
+    meta_values = soup.find_all('span', 'article-meta-value')
+    date = parse_date(meta_values)
+    price = parse_price(main_container)
+
+    return {
+        '日期': date,
+        '品項': title,
+        '售價': price,
+        '商品網址': article_url,
+        'id': 0,  # 之後統一編號
+    }
+
+
+def merge_and_save(new_items, existing_path):
+    """把新爬到的資料和既有 JSON 合併、去重、排序、截斷成最新 1000 筆並寫回。"""
+    all_data = []
+    if os.path.exists(existing_path):
+        try:
+            with open(existing_path, 'r', encoding='utf8') as fp:
+                all_data = json.load(fp).get("game_list", [])
+            print(f"讀取舊資料：{len(all_data)} 筆")
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"舊檔案讀取失敗，重新建立：{e}")
+
+    all_data.extend(new_items)
+
+    # 以商品網址去重，保留先出現的（即最新爬到的 metadata）
+    seen = set()
+    unique = []
+    for item in all_data:
+        url = item.get('商品網址')
+        if not url or url in seen:
             continue
-else:
-    print("本次執行未抓取到任何有效列表，不進行後續解析。")
+        seen.add(url)
+        unique.append(item)
 
-# --- 第三階段：合併與存檔 (追加模式) ---
-if len(arrayofdict) > 0:
-    print("\n正在執行資料合併與去重...")
-    all_data_list = []
+    # 新到舊排序；日期非數值的視為 0（會被擠到尾巴）
+    unique.sort(
+        key=lambda x: x['日期'] if isinstance(x['日期'], (int, float)) else 0,
+        reverse=True,
+    )
 
-    # 1. 讀取舊有 JSON 檔案
-    if os.path.exists(jsonfile):
-        with open(jsonfile, 'r', encoding="utf8") as fp:
-            try:
-                old_json = json.load(fp)
-                all_data_list = old_json.get("game_list", [])
-                print(f"讀取到舊資料: {len(all_data_list)} 筆")
-            except:
-                print("舊檔案損壞，將重新建立")
+    # 截斷到最新 1000 筆（reverse=True 後新的在 index 0，所以切前 1000）
+    if len(unique) > 1000:
+        unique = unique[:1000]
 
-    # 2. 合併新舊資料
-    all_data_list.extend(arrayofdict)
-
-    # 3. 根據「商品網址」進行去重
-    unique_list = []
-    seen_urls = set()
-    for item in all_data_list:
-        if item['商品網址'] not in seen_urls:
-            unique_list.append(item)
-            seen_urls.add(item['商品網址'])
-    # 排序：新的在前（reverse=True）。日期非數值時視為 0，會被擠到尾巴後在截斷時砍掉。
-    unique_list.sort(key=lambda x: x['日期'] if isinstance(x['日期'], (int, float)) else 0, reverse=True)
-
-    # 限制數量：保留「最新的 1000 筆」。
-    # 注意：因為已 reverse=True，最新的在 index 0；要切前 1000 筆而不是後 1000 筆。
-    if len(unique_list) > 1000:
-        unique_list = unique_list[:1000]
-
-    # 重新編排 ID（從 1 開始）
-    for i, item in enumerate(unique_list):
+    # 重新編號（從 1 開始）
+    for i, item in enumerate(unique):
         item['id'] = i + 1
 
-    # 5. 寫入 JSON
-    dict_to_save = {"game_list": unique_list}
-    with open(jsonfile, 'w', encoding="utf8") as fp:
-        json.dump(dict_to_save, fp, ensure_ascii=False, indent=4)
+    with open(existing_path, 'w', encoding='utf8') as fp:
+        json.dump({"game_list": unique}, fp, ensure_ascii=False, indent=4)
 
-    print(f"--- 任務完成 --- 目前總計: {len(unique_list)} 筆資料")
-else:
-    print("--- 任務終止 --- 本次未抓取到任何新資料，保留原檔案。")
+    print(f"--- 任務完成 --- 總計 {len(unique)} 筆")
+
+
+def main():
+    print("正在讀取列表頁...")
+    links = collect_links(URL)
+    if not links:
+        print("--- 任務終止 --- 未抓到任何列表，保留原檔案")
+        return
+
+    print(f"開始解析文章內容，共計 {len(links)} 篇...")
+    parsed = []
+    for index, (title, url) in enumerate(links, 1):
+        try:
+            entry = parse_article(title, url)
+            if entry is not None:
+                parsed.append(entry)
+            if index % 10 == 0:
+                print(f"  進度：{index}/{len(links)} (成功 {len(parsed)})")
+            time.sleep(2)  # 對 PTT 友善的間隔
+        except Exception as e:
+            print(f"  解析第 {index} 篇出錯，跳過：{e}")
+            continue
+
+    if not parsed:
+        print("--- 任務終止 --- 本次無新資料，保留原檔案")
+        return
+
+    merge_and_save(parsed, JSON_FILE)
+
+
+if __name__ == "__main__":
+    main()
