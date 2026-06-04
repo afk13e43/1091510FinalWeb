@@ -18,6 +18,23 @@ const PLATFORM_TESTS = {
 // === 共用 helper ===
 const pad2 = (n) => String(n).padStart(2, '0');
 
+// 從售價字串擷取第一個合理的數字（NTD）。失敗回 NaN。
+function parsePrice(str) {
+    if (!str) return NaN;
+    const cleaned = String(str).replace(/,/g, '');
+    const m = cleaned.match(/(\d{2,6})(?:\.\d+)?/);
+    return m ? Number(m[1]) : NaN;
+}
+
+const SORTERS = {
+    date_desc:  (a, b) => (typeof b['日期'] === 'number' ? b['日期'] : 0) - (typeof a['日期'] === 'number' ? a['日期'] : 0),
+    date_asc:   (a, b) => (typeof a['日期'] === 'number' ? a['日期'] : Infinity) - (typeof b['日期'] === 'number' ? b['日期'] : Infinity),
+    price_asc:  (a, b) => (Number.isFinite(parsePrice(a['售價'])) ? parsePrice(a['售價']) : Infinity)
+                        - (Number.isFinite(parsePrice(b['售價'])) ? parsePrice(b['售價']) : Infinity),
+    price_desc: (a, b) => (Number.isFinite(parsePrice(b['售價'])) ? parsePrice(b['售價']) : -Infinity)
+                        - (Number.isFinite(parsePrice(a['售價'])) ? parsePrice(a['售價']) : -Infinity),
+};
+
 function formatDate(ts) {
     if (typeof ts !== 'number') return '未知';
     const d = new Date(ts * 1000);
@@ -79,11 +96,24 @@ function renderWishlist() {
 function filterItems() {
     const test = currentPlatformTest();
     const q = ($('#game_name').val() || '').trim().toLowerCase();
-    return all.filter((it) => {
+    const minRaw = $('#price_min').val();
+    const maxRaw = $('#price_max').val();
+    const min = minRaw === '' || minRaw == null ? -Infinity : Number(minRaw);
+    const max = maxRaw === '' || maxRaw == null ?  Infinity : Number(maxRaw);
+    const sorter = SORTERS[$('#sort_by').val()] || SORTERS.date_desc;
+
+    const filtered = all.filter((it) => {
         if (!test(it)) return false;
         if (q && !String(it['品項']).toLowerCase().includes(q)) return false;
+        if (min !== -Infinity || max !== Infinity) {
+            const p = parsePrice(it['售價']);
+            if (!Number.isFinite(p)) return false;     // 篩價格時，無法解析價格者排除
+            if (p < min || p > max) return false;
+        }
         return true;
     });
+
+    return [...filtered].sort(sorter);
 }
 
 // === 圖表 ===
@@ -138,10 +168,15 @@ function applyFull() {
 
 function bindEvents() {
     $('input[name=game_type]').on('change', applyTableOnly);
+    $('#sort_by').on('change', applyTableOnly);
+    $('#price_min, #price_max').on('input', applyTableOnly);
     $('#game_name_button').on('click', applyFull);
     $('#game_name').on('keydown', (e) => { if (e.key === 'Enter') applyFull(); });
     $('#clear_search').on('click', () => {
         $('#game_name').val('');
+        $('#price_min').val('');
+        $('#price_max').val('');
+        $('#sort_by').val('date_desc');
         $('#alll').prop('checked', true);
         applyFull();
     });

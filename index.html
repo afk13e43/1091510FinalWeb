@@ -180,11 +180,28 @@
 
           <button class="btn btn-link rounded-pill px-3" id="haka_button" type="button">客家好手氣</button>
         </div>
-        <div class="d-flex gap-2 justify-content-center py-5">
+        <div class="d-flex gap-2 justify-content-center pt-5 pb-2">
           <span><input type="radio" name="game_type" value="1" id="alll" checked><b>全部平台</b></span>
           <span><input type="radio" name="game_type" value="2" id="ps" unchecked><b>PS</b></span>
           <span><input type="radio" name="game_type" value="3" id="xbox" unchecked><b>XBOX</b></span>
           <span><input type="radio" name="game_type" value="4" id="ns" unchecked><b>NS</b></span>
+        </div>
+        <div class="d-flex flex-wrap gap-3 justify-content-center align-items-center pb-5">
+          <div class="d-flex align-items-center gap-2">
+            <label for="price_min" class="form-label mb-0"><b>價格</b></label>
+            <input type="number" class="form-control form-control-sm" id="price_min" placeholder="最低" min="0" style="width:90px">
+            <span>～</span>
+            <input type="number" class="form-control form-control-sm" id="price_max" placeholder="最高" min="0" style="width:90px">
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <label for="sort_by" class="form-label mb-0"><b>排序</b></label>
+            <select id="sort_by" class="form-select form-select-sm" style="width:auto">
+              <option value="date_desc" selected>日期：新→舊</option>
+              <option value="date_asc">日期：舊→新</option>
+              <option value="price_asc">價格：低→高</option>
+              <option value="price_desc">價格：高→低</option>
+            </select>
+          </div>
         </div>
       </div>
 
